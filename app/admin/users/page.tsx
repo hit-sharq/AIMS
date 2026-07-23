@@ -26,7 +26,11 @@ export default function AdminUsersPage() {
     fetch("/api/users")
       .then(res => res.json())
       .then(data => {
-        setUsers(data)
+        setUsers(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+      .catch(() => {
+        setUsers([])
         setLoading(false)
       })
   }, [])
@@ -45,7 +49,7 @@ export default function AdminUsersPage() {
       <div className="admin-content">
         <PageHead eyebrow="Admin" title="Users" desc="Manage user accounts and roles." />
         <div className="admin-section">
-          <p style={{ color: "#8e8e93" }}>Loading users…</p>
+          <p style={{ color: "var(--ink-2)" }}>Loading users…</p>
         </div>
       </div>
     )
@@ -70,7 +74,7 @@ export default function AdminUsersPage() {
               {users.map((u) => (
                 <tr key={u.id}>
                   <td data-label="Name">
-                    <span style={{ fontWeight: 600, color: "#1b1a17" }}>{u.name}</span>
+                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{u.name}</span>
                   </td>
                   <td data-label="Email" className="admin-table-muted">{u.email}</td>
                   <td data-label="Role">
@@ -90,7 +94,7 @@ export default function AdminUsersPage() {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="admin-table-empty">No users yet</td>
+                  <td colSpan={4} className="admin-table-empty">No users registered yet</td>
                 </tr>
               )}
             </tbody>

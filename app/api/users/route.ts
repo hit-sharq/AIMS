@@ -7,9 +7,6 @@ export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const adminIds = (process.env.ADMIN_USER_IDS || "").split(",").map(id => id.trim()).filter(Boolean)
-  if (!adminIds.includes(userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-
   try {
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
@@ -18,6 +15,6 @@ export async function GET() {
     return NextResponse.json(users)
   } catch (error) {
     console.error("Failed to fetch users:", error)
-    return NextResponse.json({ error: "Failed to load users" }, { status: 500 })
+    return NextResponse.json([])
   }
 }

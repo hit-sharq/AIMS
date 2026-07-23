@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Sparkles, UserCheck, Briefcase, ArrowRight, X, ShieldCheck } from "lucide-react";
+import { Sparkles, Briefcase, ArrowRight, X, ShieldCheck } from "lucide-react";
 
 interface RoleSelectorModalProps {
   isOpen: boolean;
@@ -16,16 +16,20 @@ export function RoleSelectorModal({ isOpen, onClose }: RoleSelectorModalProps) {
   const [selectedRole, setSelectedRole] = useState<"creator" | "client" | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("synthos_user_role");
-    if (saved === "creator" || saved === "client") {
-      setSelectedRole(saved);
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("synthos_user_role");
+      if (saved === "creator" || saved === "client") {
+        setSelectedRole(saved);
+      }
     }
   }, []);
 
   if (!isOpen) return null;
 
   const handleSelectRole = (role: "creator" | "client") => {
-    localStorage.setItem("synthos_user_role", role);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("synthos_user_role", role);
+    }
     setSelectedRole(role);
     onClose();
 
@@ -45,23 +49,24 @@ export function RoleSelectorModal({ isOpen, onClose }: RoleSelectorModalProps) {
       position: "fixed",
       inset: 0,
       zIndex: 9999,
-      background: "rgba(10, 10, 12, 0.82)",
-      backdropFilter: "blur(12px)",
+      background: "rgba(9, 9, 11, 0.88)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       padding: "20px",
     }}>
       <div style={{
-        background: "var(--surface, #18181b)",
+        background: "#121215",
         border: "1px solid rgba(255, 255, 255, 0.12)",
-        borderRadius: "20px",
+        borderRadius: "24px",
         maxWidth: "680px",
         width: "100%",
-        boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
-        padding: "36px",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.8)",
+        padding: "40px",
         position: "relative",
-        color: "var(--ink, #fff)",
+        color: "#fafafa",
       }}>
         <button
           onClick={onClose}
@@ -69,9 +74,9 @@ export function RoleSelectorModal({ isOpen, onClose }: RoleSelectorModalProps) {
             position: "absolute",
             top: 20,
             right: 20,
-            background: "rgba(255,255,255,0.06)",
-            border: "none",
-            color: "var(--ink-2, #a1a1aa)",
+            background: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            color: "#a1a1aa",
             borderRadius: "50%",
             width: 36,
             height: 36,
@@ -79,34 +84,34 @@ export function RoleSelectorModal({ isOpen, onClose }: RoleSelectorModalProps) {
             placeItems: "center",
             cursor: "pointer",
           }}
-          aria-label="Close role selector"
+          aria-label="Close"
         >
           <X size={18} />
         </button>
 
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
           <span style={{
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
-            fontSize: "0.75rem",
+            fontSize: "0.74rem",
             fontWeight: 600,
             textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            padding: "4px 12px",
+            letterSpacing: "0.1em",
+            padding: "4px 14px",
             borderRadius: 100,
-            background: "rgba(99, 102, 241, 0.15)",
-            color: "#818cf8",
-            border: "1px solid rgba(99, 102, 241, 0.3)",
-            marginBottom: 12,
+            background: "rgba(255, 255, 255, 0.08)",
+            color: "#ffffff",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            marginBottom: 16,
           }}>
-            <Sparkles size={14} /> Workspace Gateway
+            <Sparkles size={14} /> Welcome to Synthos
           </span>
-          <h2 style={{ fontSize: "1.8rem", fontWeight: 600, margin: "6px 0 8px" }}>
-            Welcome to Synthos
+          <h2 style={{ fontSize: "2rem", fontWeight: 700, margin: "6px 0 10px", letterSpacing: "-0.03em" }}>
+            What brings you to Synthos today?
           </h2>
-          <p style={{ color: "var(--ink-2, #a1a1aa)", fontSize: "0.94rem" }}>
-            Select your workspace role to customize your experience:
+          <p style={{ color: "#a1a1aa", fontSize: "0.98rem", maxWidth: "500px", margin: "0 auto" }}>
+            Select your entry point to personalize your workspace experience:
           </p>
         </div>
 
@@ -116,50 +121,49 @@ export function RoleSelectorModal({ isOpen, onClose }: RoleSelectorModalProps) {
             onClick={() => handleSelectRole("creator")}
             style={{
               background: "rgba(255, 255, 255, 0.03)",
-              border: selectedRole === "creator" ? "2px solid #818cf8" : "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "16px",
-              padding: "24px",
+              border: selectedRole === "creator" ? "2px solid #ffffff" : "1px solid rgba(255, 255, 255, 0.1)",
+              borderRadius: "18px",
+              padding: "28px 24px",
               cursor: "pointer",
               transition: "all 0.2s ease",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
             }}
-            className="role-card-hover"
           >
             <div>
               <div style={{
                 width: 48,
                 height: 48,
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+                background: "#ffffff",
                 display: "grid",
                 placeItems: "center",
-                color: "#fff",
-                marginBottom: 16,
+                color: "#09090b",
+                marginBottom: 18,
               }}>
-                <ShieldCheck size={24} />
+                <ShieldCheck size={26} />
               </div>
-              <span style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", color: "#818cf8", letterSpacing: "0.05em" }}>
-                Internal Team
+              <span style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", color: "#a1a1aa", letterSpacing: "0.05em" }}>
+                Internal Agency Team
               </span>
-              <h3 style={{ fontSize: "1.25rem", fontWeight: 600, margin: "6px 0 10px" }}>
-                Creator / Agency Lead
+              <h3 style={{ fontSize: "1.3rem", fontWeight: 700, margin: "6px 0 10px", color: "#ffffff" }}>
+                I am a Creator / Agency Lead
               </h3>
-              <p style={{ fontSize: "0.84rem", color: "var(--ink-2, #a1a1aa)", lineHeight: 1.5 }}>
+              <p style={{ fontSize: "0.86rem", color: "#a1a1aa", lineHeight: 1.55 }}>
                 Access Mission Control, run zero-touch AI proposal synthesis, track 10-stage workflows, CRM & Talent matching.
               </p>
             </div>
             <div style={{
-              marginTop: 24,
+              marginTop: 28,
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              fontSize: "0.88rem",
+              fontSize: "0.9rem",
               fontWeight: 600,
-              color: "#818cf8",
+              color: "#ffffff",
             }}>
-              Go to Creator Workspace <ArrowRight size={16} />
+              Enter Creator Workspace <ArrowRight size={16} />
             </div>
           </div>
 
@@ -169,49 +173,49 @@ export function RoleSelectorModal({ isOpen, onClose }: RoleSelectorModalProps) {
             style={{
               background: "rgba(255, 255, 255, 0.03)",
               border: selectedRole === "client" ? "2px solid #34d399" : "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "16px",
-              padding: "24px",
+              borderRadius: "18px",
+              padding: "28px 24px",
               cursor: "pointer",
               transition: "all 0.2s ease",
               display: "flex",
               flexDirection: "column",
-              justify.content: "space-between",
+              justifyContent: "space-between",
             }}
-            className="role-card-hover"
           >
             <div>
               <div style={{
                 width: 48,
                 height: 48,
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                background: "rgba(16, 185, 129, 0.15)",
+                border: "1px solid rgba(16, 185, 129, 0.3)",
                 display: "grid",
                 placeItems: "center",
-                color: "#fff",
-                marginBottom: 16,
+                color: "#34d399",
+                marginBottom: 18,
               }}>
-                <Briefcase size={24} />
+                <Briefcase size={26} />
               </div>
               <span style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", color: "#34d399", letterSpacing: "0.05em" }}>
                 Client Portal
               </span>
-              <h3 style={{ fontSize: "1.25rem", fontWeight: 600, margin: "6px 0 10px" }}>
+              <h3 style={{ fontSize: "1.3rem", fontWeight: 700, margin: "6px 0 10px", color: "#ffffff" }}>
                 I am a Client
               </h3>
-              <p style={{ fontSize: "0.84rem", color: "var(--ink-2, #a1a1aa)", lineHeight: 1.5 }}>
+              <p style={{ fontSize: "0.86rem", color: "#a1a1aa", lineHeight: 1.55 }}>
                 Submit project briefs, join discovery meetings, review contact reports, and approve proposals & quotes.
               </p>
             </div>
             <div style={{
-              marginTop: 24,
+              marginTop: 28,
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              fontSize: "0.88rem",
+              fontSize: "0.9rem",
               fontWeight: 600,
               color: "#34d399",
             }}>
-              Start a Project / Client Onboarding <ArrowRight size={16} />
+              Start a Project / Submit Brief <ArrowRight size={16} />
             </div>
           </div>
         </div>
