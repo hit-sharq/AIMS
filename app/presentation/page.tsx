@@ -36,7 +36,6 @@ export default function WebPresentationPage() {
         { name: "Suleiman", role: "Lead Developer", built: "Prisma ORM & Webhook Ingestion", initial: "S", color: "bg-emerald-600" },
         { name: "Joshua", role: "AI Engineer", built: "Gemini 1.5 Pro & NIM Fallback", initial: "J", color: "bg-amber-600" },
         { name: "Kofa", role: "Product Designer", built: "Zinc 950 Stealth UI Workspace", initial: "K", color: "bg-purple-600" },
-        { name: "Sharlmon", role: "Pitch & Ops Lead", built: "Resend Email & Calendar Engine", initial: "S", color: "bg-blue-600" },
       ],
     },
     // SLIDE 3: Problem Statement (Specific Scenario & Numbers)
@@ -202,7 +201,7 @@ export default function WebPresentationPage() {
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-indigo-400">{slide.title}</span>
               <h2 className="font-serif text-3xl md:text-4xl font-bold text-white mt-1">{slide.heading}</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
               {slide.members?.map((m, idx) => (
                 <div key={idx} className="border border-zinc-800 bg-[#1B1F30] p-5 rounded-2xl text-center space-y-3 shadow-lg">
                   <div className={`h-12 w-12 rounded-full ${m.color} text-white font-bold text-lg flex items-center justify-center mx-auto shadow-md`}>

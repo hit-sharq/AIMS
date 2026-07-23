@@ -112,11 +112,10 @@ def create_presentation():
         ("Suleiman", "Lead Developer", "Built Prisma ORM & Webhook Ingestion", "S"),
         ("Joshua", "AI Engineer", "Built Gemini 1.5 Pro & NIM Fallback", "J"),
         ("Kofa", "Product Designer", "Built Zinc 950 Stealth UI Workspace", "K"),
-        ("Sharlmon", "Pitch & Ops Lead", "Built Resend Email & Calendar Engine", "S"),
     ]
 
-    card_width = Inches(2.1)
-    card_gap = Inches(0.2)
+    card_width = Inches(2.6)
+    card_gap = Inches(0.3)
     start_x = Inches(1.0)
     card_y = Inches(2.3)
     card_height = Inches(4.5)

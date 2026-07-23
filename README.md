@@ -127,7 +127,6 @@ Open [http://localhost:3000/presentation](http://localhost:3000/presentation) to
 * **Suleiman** — Lead Developer (Built Prisma ORM & Webhook Ingestion)
 * **Joshua** — AI Engineer (Built Gemini 1.5 Pro & NIM Fallback)
 * **Kofa** — Product Designer (Built Zinc 950 Stealth UI Workspace)
-* **Sharlmon** — Pitch & Ops Lead (Built Resend Email & Calendar Engine)
 
 ---
 
