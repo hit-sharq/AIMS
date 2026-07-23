@@ -1,7 +1,5 @@
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function sendEmail(params: {
   to: string
   subject: string
@@ -14,9 +12,13 @@ export async function sendEmail(params: {
     return { skipped: true }
   }
 
+  const resend = new Resend(apiKey)
+
   try {
+    const fromAddress = params.from || process.env.RESEND_FROM_EMAIL || "Synthos <onboarding@resend.dev>"
+
     const { data, error } = await resend.emails.send({
-      from: params.from || process.env.RESEND_FROM_EMAIL || "Synthos <info@lumyn.co.ke>",
+      from: fromAddress,
       to: params.to,
       subject: params.subject,
       html: params.html,
@@ -27,6 +29,7 @@ export async function sendEmail(params: {
       return { error }
     }
 
+    console.log(`✉️ Email successfully dispatched to ${params.to}: ID ${data?.id}`)
     return { data }
   } catch (err) {
     console.error("Failed to send email:", err)
