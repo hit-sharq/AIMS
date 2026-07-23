@@ -5,8 +5,17 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET(_req: Request, { params }: { params: { token: string } }) {
   try {
-    const project = await prisma.project.findUnique({
-      where: { publicToken: params.token },
+    const token = params.token
+
+    // Support lookup by publicToken, project id, or slug seamlessly
+    const project = await prisma.project.findFirst({
+      where: {
+        OR: [
+          { publicToken: token },
+          { id: token },
+          { slug: token },
+        ],
+      },
       include: {
         brief: true,
         call: true,
