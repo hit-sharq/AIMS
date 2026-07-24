@@ -5,33 +5,24 @@ import { DashboardShell } from "@/components/app/DashboardShell"
 import { PageHead } from "@/components/app/Page"
 
 const STAGES = [
-  { id: "brief", label: "Brief", color: "#8e8e93" },
-  { id: "call", label: "First Meeting", color: "#4a90d9" },
-  { id: "contactReport", label: "Contact Report", color: "#5b9bd5" },
-  { id: "productionMeeting", label: "Production Meeting", color: "#7b68ee" },
-  { id: "proposal", label: "Proposal", color: "#e67e22" },
-  { id: "quote", label: "Quote", color: "#27ae60" },
-  { id: "approval", label: "Approval", color: "#2ecc71" },
+  { id: "ACTIVE", label: "Active Jobs", color: "#4a90d9" },
+  { id: "MATCHING", label: "Matching", color: "#e67e22" },
+  { id: "ASSIGNED", label: "Assigned", color: "#27ae60" },
+  { id: "COMPLETED", label: "Completed", color: "#2ecc71" },
 ]
 
 export default async function PipelinePage() {
-  const projects = await prisma.project.findMany({
-    include: { quote: true, proposal: true, owner: true },
+  const jobs = await prisma.job.findMany({
+    include: { client: true, skills: { include: { skill: true } } },
     orderBy: { updatedAt: "desc" },
   })
 
-  const totalValue = projects.reduce((sum, p) => {
-    if (p.quote?.services && Array.isArray(p.quote.services)) {
-      const qTotal = p.quote.services.reduce((a: number, s: any) => a + (s.qty || 0) * (s.rate || 0), 0)
-      return sum + qTotal
-    }
-    return sum
-  }, 0)
+  const totalValue = jobs.reduce((sum: number, j: any) => sum + (j.budgetMax || 0), 0)
 
-  const byStage = STAGES.reduce((acc, stage) => {
-    acc[stage.id] = projects.filter(p => p.stage === stage.id)
+  const byStage = STAGES.reduce((acc: Record<string, typeof jobs>, stage: any) => {
+    acc[stage.id] = jobs.filter((j: any) => j.status === stage.id)
     return acc
-  }, {} as Record<string, typeof projects>)
+  }, {} as Record<string, typeof jobs>)
 
   return (
     <DashboardShell>
@@ -39,11 +30,11 @@ export default async function PipelinePage() {
         <PageHead
           eyebrow="Dashboard"
           title="Pipeline"
-          desc="Revenue pipeline from intake to signed gig."
+          desc="Revenue demand pipeline from intake to matched contract."
           actions={
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem", color: "var(--ink-2)" }}>
-                {projects.length} projects · ${totalValue.toLocaleString()} pipeline
+                {jobs.length} jobs · KSh {totalValue.toLocaleString()} pipeline
               </div>
             </div>
           }
@@ -52,12 +43,7 @@ export default async function PipelinePage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 32 }}>
           {STAGES.map((stage) => {
             const count = byStage[stage.id]?.length || 0
-            const stageValue = byStage[stage.id]?.reduce((sum, p) => {
-              if (p.quote?.services && Array.isArray(p.quote.services)) {
-                return sum + p.quote.services.reduce((a: number, s: any) => a + (s.qty || 0) * (s.rate || 0), 0)
-              }
-              return sum
-            }, 0) || 0
+            const stageValue = byStage[stage.id]?.reduce((sum: number, j: any) => sum + (j.budgetMax || 0), 0) || 0
             return (
               <div key={stage.id} style={{ background: "var(--bg)", border: "2px solid var(--ink)", padding: 18 }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", color: stage.color, marginBottom: 8 }}>
@@ -68,7 +54,7 @@ export default async function PipelinePage() {
                 </div>
                 {stageValue > 0 && (
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--ink-2)", marginTop: 4 }}>
-                    ${stageValue.toLocaleString()}
+                    KSh {stageValue.toLocaleString()}
                   </div>
                 )}
               </div>
@@ -90,37 +76,31 @@ export default async function PipelinePage() {
               <div style={{ padding: 12 }}>
                 {(byStage[stage.id]?.length || 0) === 0 ? (
                   <div style={{ padding: 24, textAlign: "center", color: "var(--ink-3)", fontSize: "0.82rem" }}>
-                    No projects
+                    No jobs
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {byStage[stage.id]?.map((p) => (
-                      <a
-                        key={p.id}
-                        href={`/dashboard/projects/${p.id}`}
-                        style={{ display: "block", padding: 14, background: "var(--surface-2)", border: "1px solid var(--line)", textDecoration: "none", color: "inherit" }}
+                    {byStage[stage.id]?.map((j: any) => (
+                      <div
+                        key={j.id}
+                        style={{ display: "block", padding: 14, background: "var(--surface-2)", border: "1px solid var(--line)" }}
                       >
                         <div style={{ fontWeight: 600, color: "var(--ink)", fontSize: "0.92rem", marginBottom: 4 }}>
-                          {p.name}
+                          {j.title}
                         </div>
                         <div style={{ fontSize: "0.78rem", color: "var(--ink-2)", marginBottom: 6 }}>
-                          {p.client}
+                          {j.client?.name || "Client"}
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span style={{
                             fontFamily: "var(--font-mono)", fontSize: "0.65rem", textTransform: "uppercase",
                             letterSpacing: "0.05em", padding: "2px 8px", background: "var(--bg)", border: "1px solid var(--line)",
-                            color: p.status === "active" ? "var(--signal)" : p.status === "review" ? "#e67e22" : p.status === "complete" ? "#27ae60" : "var(--ink-3)"
+                            color: j.status === "ACTIVE" ? "var(--signal)" : "#27ae60"
                           }}>
-                            {p.status}
+                            {j.status}
                           </span>
-                          {p.owner && (
-                            <span style={{ fontSize: "0.7rem", color: "var(--ink-3)" }}>
-                              {p.owner.name}
-                            </span>
-                          )}
                         </div>
-                      </a>
+                      </div>
                     ))}
                   </div>
                 )}

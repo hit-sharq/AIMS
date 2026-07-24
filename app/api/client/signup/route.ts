@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma"
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { name, email, company, clerkId } = body || {}
+    const { name, email, company } = body || {}
 
-    if (!name?.trim() || !email?.trim() || !clerkId) {
-      return NextResponse.json({ error: "Name, email, and Clerk ID are required." }, { status: 400 })
+    if (!name?.trim() || !email?.trim()) {
+      return NextResponse.json({ error: "Name and email are required." }, { status: 400 })
     }
 
     const existing = await prisma.user.findFirst({
@@ -18,19 +18,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 })
     }
 
-    const initials = name
-      .split(" ")
-      .map((n: string) => n[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase()
-
     const user = await prisma.user.create({
       data: {
         email: email.trim().toLowerCase(),
         name: name.trim(),
-        initials: initials || "CL",
-        role: "client",
+        role: "CLIENT",
+        clientProfile: {
+          create: {
+            companyName: company || name,
+            industry: "Technology",
+          },
+        },
       },
     })
 

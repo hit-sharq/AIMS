@@ -1,43 +1,16 @@
 export const dynamic = 'force-dynamic'
 
-import { prisma } from "@/lib/prisma"
-import { PageHead, PageWrap } from "@/components/app/Page"
-import { notFound } from "next/navigation"
+import { PageWrap } from "@/components/app/Page"
 import Link from "next/link"
-import "@/components/app/blog.css"
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = await prisma.post.findUnique({
-    where: { slug: params.slug, kind: "blog" },
-  })
-
-  if (!post || post.status !== "published") {
-    notFound()
-  }
-
+export default async function BlogDetailPage() {
   return (
     <PageWrap>
-      <Link href="/blog" className="btn btn-ghost btn-sm" style={{ marginBottom: 20 }}>← Back to blog</Link>
-      <article className="post-full">
-        {post.coverImage && (
-          <div className="post-full-img">
-            <img src={post.coverImage} alt={post.title} />
-          </div>
-        )}
-        <div className="post-full-body">
-          <span className="eyebrow">Blog · {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : ""}</span>
-          <h1 className="display" style={{ fontSize: "clamp(1.8rem,3vw,2.6rem)", margin: "8px 0 14px" }}>{post.title}</h1>
-          {post.excerpt && <p className="lede" style={{ marginBottom: 20 }}>{post.excerpt}</p>}
-          <div style={{ color: "var(--ink-2)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{post.content}</div>
-          {Array.isArray(post.tags) && (post.tags as string[]).length > 0 && (
-            <div className="row gap-2 wrap" style={{ marginTop: 28 }}>
-              {(post.tags as string[]).map((tag: string) => (
-                <span key={tag} className="chip">{tag}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      </article>
+      <div style={{ textAlign: "center", padding: "60px 20px" }}>
+        <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "2rem", marginBottom: 16 }}>Blog Post</h1>
+        <p className="muted" style={{ marginBottom: 24 }}>Article coming soon.</p>
+        <Link href="/blog" className="btn btn-signal">Back to Blog</Link>
+      </div>
     </PageWrap>
   )
 }

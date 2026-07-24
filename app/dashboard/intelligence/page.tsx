@@ -1,40 +1,30 @@
 export const dynamic = 'force-dynamic'
 
-import Link from "next/link"
-import { getProjects } from "@/lib/data-server"
+import { prisma } from "@/lib/prisma"
 import { PageHead, PageWrap } from "@/components/app/Page"
-import { Confidence, Empty } from "@/components/app/ui"
-
-function countInsights(p: any) {
-  if (!p.understanding) return 0
-  const groups = ["wants", "businessObjectives", "creativeObjectives", "constraints", "risks", "missing", "questions"]
-  return groups.reduce((a, g) => a + ((p.understanding.insights || []).filter((i: any) => i.group === g).length), 0)
-}
+import { Empty } from "@/components/app/ui"
 
 export default async function IntelligencePage() {
-  const projects = await getProjects()
-  const ready = projects.filter((p) => p.understanding && p.understanding.confidence > 0)
+  const matches = await prisma.match.findMany({
+    include: { job: true },
+    orderBy: { createdAt: "desc" },
+  })
+
   return (
     <PageWrap>
-      <PageHead eyebrow="Intelligence" title="AI Intelligence" desc="Structured understanding extracted from every brief, call and transcript. Review and correct before it drives the work." />
-      {ready.length === 0 ? (
-        <Empty title="No understanding generated yet" hint="Complete a brief and client call to let the AI extract intelligence." />
+      <PageHead eyebrow="Analytics" title="AI Intelligence Matrix" desc="Autonomous scoring metrics and capability intelligence." />
+      {matches.length === 0 ? (
+        <Empty title="No intelligence metrics yet" hint="The AI engine generates intelligence metrics dynamically upon match execution." />
       ) : (
-        <div className="feat-grid">
-          {ready.map((p) => (
-            <Link key={p.id} href={`/dashboard/projects/${p.id}`} className="feat-card">
-              <div className="row between" style={{ marginBottom: 10 }}>
-                <span className="feat-tag">Understanding</span>
-                <Confidence value={p.understanding!.confidence} />
+        <div className="feat-list">
+          {matches.map((m: any) => (
+            <div key={m.id} className="glass-card flex items-center justify-between p-4 my-2">
+              <div>
+                <span className="tiny muted">{m.job.title}</span>
+                <p style={{ fontWeight: 600, color: "var(--ink)" }}>Rank #{m.rank} Candidate Match</p>
               </div>
-              <h3>{p.name}</h3>
-              <p className="tiny" style={{ marginTop: 6 }}>{p.client}</p>
-              <div className="row gap-2 wrap" style={{ marginTop: 14 }}>
-                <span className="chip">{countInsights(p)} insights</span>
-                <span className="chip" style={{ color: "var(--ai-ink)", background: "var(--ai-soft)" }}>AI-drafted</span>
-                <span className="chip" style={{ color: "var(--human-ink)", background: "var(--human-soft)" }}>Needs review</span>
-              </div>
-            </Link>
+              <span className="font-mono text-xs font-bold text-emerald-600">{m.confidenceScore}% AI Confidence</span>
+            </div>
           ))}
         </div>
       )}

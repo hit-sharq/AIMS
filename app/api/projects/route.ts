@@ -1,81 +1,64 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { Stage, ProjStatus, ReviewStatus } from "@prisma/client"
-import { runAutoWorkflow } from "@/lib/auto-workflow"
 
 export async function GET() {
   try {
-    const projects = await prisma.project.findMany({
+    const jobs = await prisma.job.findMany({
       orderBy: { updatedAt: "desc" },
-      include: { brief: true, understanding: true, workshop: true, proposal: true, quote: true },
+      include: {
+        client: true,
+        skills: { include: { skill: true } },
+        matches: { include: { creator: true } },
+      },
     })
-    return NextResponse.json(projects)
+    const formatted = jobs.map((j) => ({
+      ...j,
+      name: j.title,
+      client: j.client?.name || "Client Business",
+      stage: j.status,
+      progress: j.status === "ASSIGNED" ? 100 : j.status === "MATCHING" ? 65 : 30,
+    }))
+    return NextResponse.json({ projects: formatted })
   } catch (error) {
     console.error("Failed to fetch projects:", error)
-    return NextResponse.json({ error: "Failed to load projects" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to load projects", projects: [] }, { status: 500 })
   }
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const project = await prisma.project.create({
-      data: {
-        name: body.name,
-        client: body.client,
-        type: body.type || "Strategy & Campaign",
-        stage: body.stage ? (body.stage as Stage) : Stage.brief,
-        progress: body.progress ?? 0,
-        status: body.status ? (body.status as ProjStatus) : ProjStatus.active,
-        nextAction: body.nextAction || "Complete the creative brief",
-        slug: (body.name || "Untitled").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40),
-        clientId: body.clientId || undefined,
-      },
-    })
-
-    const client = body.clientId
-      ? await prisma.client.findUnique({ where: { id: body.clientId } })
-      : await prisma.client.findFirst({ where: { name: body.client } })
-
-    if (!client) {
-      await prisma.client.create({
+    const firstClient = await prisma.user.findFirst({ where: { role: "CLIENT" } })
+    
+    let clientId = firstClient?.id
+    if (!clientId) {
+      const newClient = await prisma.user.create({
         data: {
-          name: body.client || "Unknown",
-          company: body.company || "",
-          email: body.email || "",
-          industry: "Unknown",
-          status: "lead",
-          source: "Admin",
-          tags: ["admin-created"],
+          name: body.client || "Valued Client",
+          email: body.email || `client_${Date.now()}@marketplace.com`,
+          role: "CLIENT",
         },
       })
+      clientId = newClient.id
     }
 
-    await prisma.brief.create({
+    const job = await prisma.job.create({
       data: {
-        projectId: project.id,
-        clientName: body.client || "",
-        company: body.company || "",
-        contact: body.email || "",
-        industry: "Unknown",
-        title: body.name || "",
-        businessObjective: body.objective || "",
-        objectives: [],
-        audience: body.audience || "",
-        brand: "",
-        direction: body.direction || "",
-        deliverables: [],
-        budget: body.budget || "",
-        timeline: body.timeline || "",
-        attachments: [],
-        context: body.context || "",
+        clientId,
+        title: body.name || "Software Project Intake",
+        description: body.objective || body.description || "Client project intake requirements.",
+        projectType: body.type || "Full-Stack Web App",
+        budgetMin: 500000,
+        budgetMax: 2500000,
+        budgetCurrency: "KES",
+        timeline: body.timeline || "6 Weeks",
+        requiredLevel: "MID",
+        status: "ACTIVE",
       },
     })
 
-    runAutoWorkflow(project.id).catch((err) => console.error("Auto-workflow failed after project creation:", err))
-
-    return NextResponse.json(project, { status: 201 })
+    return NextResponse.json(job, { status: 201 })
   } catch (error) {
     console.error("Failed to create project:", error)
     return NextResponse.json({ error: "Failed to create project" }, { status: 500 })
