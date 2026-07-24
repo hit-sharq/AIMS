@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { dispatchAutonomousCreatorHotLeadEmail } from "@/lib/email-dispatcher"
 
 export async function runMatchmakerForJob(jobId: string) {
   // 1. Fetch Job specification & required skills
@@ -121,6 +122,40 @@ JSON Schema:
       },
     })
     createdMatches.push(matchRecord)
+  }
+
+  // 5. Autonomous Evaluation for #1 Ranked Creator (Threshold: >= 90% confidence score)
+  const topMatch = createdMatches.find((m) => m.rank === 1)
+  if (topMatch && topMatch.confidenceScore >= 90) {
+    try {
+      // Automatically update Match status in Prisma to ADMIN_APPROVED (System Proxy)
+      await prisma.match.update({
+        where: { id: topMatch.id },
+        data: {
+          status: "ADMIN_APPROVED",
+          approvedAt: new Date(),
+        },
+      })
+      topMatch.status = "ADMIN_APPROVED"
+
+      // Extract Creator Email & Fire Autonomous Hot Lead Email
+      const creatorEmail = topMatch.creator.user.email
+      const creatorName = topMatch.creator.user.name
+
+      await dispatchAutonomousCreatorHotLeadEmail({
+        creatorEmail,
+        creatorName,
+        jobTitle: job.title,
+        budgetMin: job.budgetMin || 1500000,
+        budgetMax: job.budgetMax || 3500000,
+        timeline: job.timeline,
+        confidenceScore: topMatch.confidenceScore,
+        aiReasoning: topMatch.aiReasoning || undefined,
+      })
+      console.log(`[Autonomous Matchmaker Proxy]: Approved & dispatched hot lead to ${creatorEmail} (${topMatch.confidenceScore}% Match)`)
+    } catch (autonErr) {
+      console.warn("Autonomous creator dispatch error handled safely:", autonErr)
+    }
   }
 
   return createdMatches
