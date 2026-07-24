@@ -4,10 +4,18 @@ import { runMatchmakerForJob } from "@/lib/matchmaker"
 
 export async function GET() {
   try {
+    // 0. Purge all existing data for clean single happy path
+    await prisma.match.deleteMany({})
+    await prisma.jobSkill.deleteMany({})
+    await prisma.creatorSkill.deleteMany({})
+    await prisma.job.deleteMany({})
+    await prisma.creatorProfile.deleteMany({})
+    await prisma.clientProfile.deleteMany({})
+    await prisma.user.deleteMany({})
+
     // 1. Seed Core Master Skills
     const skillNames = [
-      "React", "Node.js", "TypeScript", "PostgreSQL", "UI/UX", "Tailwind CSS",
-      "Next.js", "Python", "GraphQL", "Docker", "Figma", "AWS"
+      "React", "Node.js", "TypeScript", "PostgreSQL", "UI/UX", "Tailwind CSS", "Next.js"
     ]
 
     for (const name of skillNames) {
@@ -18,98 +26,49 @@ export async function GET() {
       })
     }
 
-    // 2. Seed Test Creators
-    const creatorsData = [
-      {
-        name: "Sharlmon Musundi",
+    // 2. Seed Single Happy Path Creator: Sharlmon Musundi
+    const creatorUser = await prisma.user.create({
+      data: {
         email: "sharlmon19@gmail.com",
-        title: "Senior Full-Stack Engineer & AI Architect",
-        bio: "Specializing in Next.js, Node.js, Prisma, and Autonomous AI systems. 7+ years building enterprise applications.",
-        level: "SENIOR" as const,
-        hourlyRate: 95,
-        cvUrl: "https://github.com/sharlmon",
-        gitHubUrl: "https://github.com/sharlmon",
-        linkedInUrl: "https://linkedin.com/in/sharlmon",
-        portfolioUrl: "https://sharl-tech.co.ke",
-        skills: ["React", "Node.js", "TypeScript", "PostgreSQL", "Next.js", "Tailwind CSS"],
-      },
-      {
-        name: "Sarah Connor",
-        email: "sarah.connor@cyber.dev",
-        title: "Lead UI/UX & Product Design Specialist",
-        bio: "Crafting modern iOS 17 glassmorphism interfaces, design systems, and mobile user experiences.",
-        level: "LEAD" as const,
-        hourlyRate: 110,
-        cvUrl: "https://github.com/sarah-design",
-        portfolioUrl: "https://sarahdesign.io",
-        skills: ["UI/UX", "Figma", "Tailwind CSS", "React"],
-      },
-      {
-        name: "Alex Rivera",
-        email: "alex.rivera@ai-labs.org",
-        title: "Mid-Level Backend & Cloud Engineer",
-        bio: "Building robust GraphQL APIs, PostgreSQL databases, and Docker microservices.",
-        level: "MID" as const,
-        hourlyRate: 75,
-        gitHubUrl: "https://github.com/alex-rivera",
-        skills: ["Node.js", "PostgreSQL", "Python", "Docker", "GraphQL", "AWS"],
-      },
-    ]
-
-    for (const cData of creatorsData) {
-      const user = await prisma.user.upsert({
-        where: { email: cData.email },
-        create: { email: cData.email, name: cData.name, role: "CREATOR" },
-        update: { name: cData.name, role: "CREATOR" },
-      })
-
-      const profile = await prisma.creatorProfile.upsert({
-        where: { userId: user.id },
-        create: {
-          userId: user.id,
-          title: cData.title,
-          bio: cData.bio,
-          level: cData.level,
-          hourlyRate: cData.hourlyRate,
-          cvUrl: cData.cvUrl,
-          gitHubUrl: cData.gitHubUrl,
-          linkedInUrl: cData.linkedInUrl,
-          portfolioUrl: cData.portfolioUrl,
-          isVerified: true,
-          aiTaggingSummary: `AI Verified Profile for ${cData.name} (${cData.level} Level). Top skills: ${cData.skills.join(", ")}.`,
+        name: "Sharlmon Musundi",
+        role: "CREATOR",
+        creatorProfile: {
+          create: {
+            title: "Senior Full-Stack Engineer & AI Architect",
+            bio: "Specializing in Next.js, Node.js, Prisma, and Autonomous AI systems. 7+ years building enterprise web applications.",
+            level: "SENIOR",
+            hourlyRate: 95,
+            cvUrl: "https://github.com/sharlmon",
+            gitHubUrl: "https://github.com/sharlmon",
+            linkedInUrl: "https://linkedin.com/in/sharlmon",
+            portfolioUrl: "https://sharl-tech.co.ke",
+            isVerified: true,
+            aiTaggingSummary: "AI Verified Profile for Sharlmon Musundi (SENIOR Level). Top skills: React, Node.js, TypeScript, PostgreSQL, Next.js, Tailwind CSS.",
+          },
         },
-        update: {
-          title: cData.title,
-          bio: cData.bio,
-          level: cData.level,
-          hourlyRate: cData.hourlyRate,
-          isVerified: true,
-          aiTaggingSummary: `AI Verified Profile for ${cData.name} (${cData.level} Level). Top skills: ${cData.skills.join(", ")}.`,
-        },
-      })
+      },
+      include: { creatorProfile: true },
+    })
 
-      for (const sName of cData.skills) {
-        const skill = await prisma.skill.findUnique({ where: { name: sName } })
-        if (skill) {
-          await prisma.creatorSkill.upsert({
-            where: { creatorId_skillId: { creatorId: profile.id, skillId: skill.id } },
-            create: { creatorId: profile.id, skillId: skill.id, weight: 90, experienceYears: 5 },
-            update: { weight: 90 },
-          })
-        }
+    const creatorProfile = creatorUser.creatorProfile!
+
+    for (const sName of skillNames) {
+      const skill = await prisma.skill.findUnique({ where: { name: sName } })
+      if (skill) {
+        await prisma.creatorSkill.create({
+          data: { creatorId: creatorProfile.id, skillId: skill.id, weight: 95, experienceYears: 7 },
+        })
       }
     }
 
-    // 3. Seed Test Job
-    const clientUser = await prisma.user.upsert({
-      where: { email: "acme.corp@client.com" },
-      create: {
+    // 3. Seed Single Happy Path Job: Enterprise E-Commerce Platform
+    const clientUser = await prisma.user.create({
+      data: {
         email: "acme.corp@client.com",
         name: "Acme Global Technologies",
         role: "CLIENT",
         clientProfile: { create: { companyName: "Acme Global Technologies", industry: "E-Commerce" } },
       },
-      update: {},
     })
 
     const job = await prisma.job.create({
@@ -127,8 +86,7 @@ export async function GET() {
       },
     })
 
-    const requiredSkills = ["React", "Node.js", "TypeScript", "PostgreSQL", "UI/UX", "Tailwind CSS"]
-    for (const rSkill of requiredSkills) {
+    for (const rSkill of skillNames) {
       const skill = await prisma.skill.findUnique({ where: { name: rSkill } })
       if (skill) {
         await prisma.jobSkill.create({
@@ -137,12 +95,12 @@ export async function GET() {
       }
     }
 
-    // 4. Trigger AI Matchmaker for seed job
+    // 4. Trigger AI Matchmaker for single job -> results in TOP MATCH
     const matches = await runMatchmakerForJob(job.id)
 
     return NextResponse.json({
       success: true,
-      message: "Marketplace database successfully seeded with test creators, skills, job, and AI match matrix!",
+      message: "Marketplace database successfully seeded with single Happy Path creator and job!",
       jobId: job.id,
       matchesCount: matches.length,
       matches,

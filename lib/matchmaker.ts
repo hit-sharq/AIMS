@@ -1,111 +1,127 @@
 import { prisma } from "@/lib/prisma"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function runMatchmakerForJob(jobId: string) {
+  // 1. Fetch Job specification & required skills
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: {
+      skills: { include: { skill: true } },
+      client: true,
+    },
+  })
+
+  if (!job) throw new Error(`Job not found for ID: ${jobId}`)
+
+  // 2. Fetch all verified Creator profiles & skills
+  const creators = await prisma.creatorProfile.findMany({
+    where: { isVerified: true },
+    include: {
+      user: true,
+      skills: { include: { skill: true } },
+    },
+  })
+
+  if (creators.length === 0) return []
+
+  const requiredSkillNames = job.skills.map((js) => js.skill.name)
+
+  let aiMatches: Array<{ creatorId: string; confidenceScore: number; rank: number; aiReasoning: string }> = []
+
+  // 3. Try Gemini AI Match Matrix Engine
   try {
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
-      include: {
-        skills: { include: { skill: true } },
-      },
-    })
+    const apiKey = process.env.GEMINI_API_KEY
+    if (apiKey) {
+      const genAI = new GoogleGenerativeAI(apiKey)
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
-    if (!job) return []
+      const prompt = `You are the Match Matrix Engine. Compare the Job specification and the list of available Creators. Compare overlapping skills and experience levels. Return STRICTLY a JSON array of the top 3 matches with NO extra text or markdown formatting:
 
-    const creators = await prisma.creatorProfile.findMany({
-      include: {
-        user: true,
-        skills: { include: { skill: true } },
-      },
-    })
+Job Specification:
+Title: ${job.title}
+Required Level: ${job.requiredLevel}
+Required Skills: ${requiredSkillNames.join(", ")}
 
-    if (creators.length === 0) return []
+Available Creators:
+${creators
+  .map(
+    (c) =>
+      `ID: ${c.id} | Name: ${c.user.name} | Level: ${c.level} | Skills: ${c.skills.map((cs) => cs.skill.name).join(", ")}`
+  )
+  .join("\n")}
 
-    const jobSkillNames = job.skills.map((s) => s.skill.name.toLowerCase())
-    const totalJobWeight = job.skills.reduce((acc, s) => acc + s.weight, 0) || 1
+JSON Schema:
+[
+  { "creatorId": "string", "confidenceScore": 98.5, "rank": 1, "aiReasoning": "Matched 7 core skills..." }
+]`
 
-    const scoredCreators = creators.map((creator) => {
-      const creatorSkillNames = creator.skills.map((s) => s.skill.name.toLowerCase())
-      
-      // Calculate matching skill overlap
-      let matchedWeight = 0
-      const matchedSkillNames: string[] = []
+      const response = await model.generateContent(prompt)
+      const text = response.response.text() || ""
+      const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim()
+      const parsed = JSON.parse(cleanJson)
 
-      job.skills.forEach((js) => {
-        const name = js.skill.name.toLowerCase()
-        if (creatorSkillNames.includes(name)) {
-          matchedWeight += js.weight
-          matchedSkillNames.push(js.skill.name)
-        }
-      })
-
-      // Level match score calculation
-      const levelRankMap: Record<string, number> = { JUNIOR: 1, MID: 2, SENIOR: 3, LEAD: 4 }
-      const jobLevelRank = levelRankMap[job.requiredLevel] || 2
-      const creatorLevelRank = levelRankMap[creator.level] || 2
-      const levelDiff = Math.abs(creatorLevelRank - jobLevelRank)
-      const levelScore = Math.max(0, 30 - levelDiff * 10) // Up to 30 points
-
-      // Skill overlap score (up to 70 points)
-      const skillScore = Math.min(70, (matchedWeight / totalJobWeight) * 70)
-
-      // Total Confidence Score (range 70.0% - 98.5%)
-      let confidenceScore = Math.min(98.5, Math.max(70.0, Math.round((skillScore + levelScore + 15) * 10) / 10))
-      if (matchedSkillNames.length === 0) {
-        confidenceScore = Math.min(75.0, confidenceScore)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        aiMatches = parsed
       }
+    }
+  } catch (err) {
+    console.warn("Match Matrix Engine AI fallback activated:", err)
+  }
 
-      const reasoning = matchedSkillNames.length > 0
-        ? `Matched ${matchedSkillNames.length} core required skill(s): ${matchedSkillNames.join(", ")}. Creator level (${creator.level}) matches job requirement (${job.requiredLevel}).`
-        : `Verified ${creator.level} capability profile with expertise in ${creator.skills.map((s) => s.skill.name).slice(0, 3).join(", ") || "software engineering"}.`
+  // Fallback Deterministic Calculation if AI is offline or parsing fails
+  if (aiMatches.length === 0) {
+    const scoredCreators = creators.map((creator) => {
+      const creatorSkillNames = new Set(creator.skills.map((cs) => cs.skill.name))
+      const matchingSkills = requiredSkillNames.filter((s) => creatorSkillNames.has(s))
+
+      const skillMatchRatio = requiredSkillNames.length > 0 ? matchingSkills.length / requiredSkillNames.length : 1
+      const isLevelMatch = creator.level === job.requiredLevel
+
+      let baseScore = skillMatchRatio * 90
+      if (isLevelMatch) baseScore += 8.5
+      else baseScore += 4.0
+
+      const confidenceScore = Math.min(99.5, Math.max(70.0, Number(baseScore.toFixed(1))))
 
       return {
-        creator,
+        creatorId: creator.id,
         confidenceScore,
-        reasoning,
-        matchedSkills: matchedSkillNames,
+        matchingSkills,
+        creatorName: creator.user.name,
       }
     })
 
-    // Sort by confidence score descending
     scoredCreators.sort((a, b) => b.confidenceScore - a.confidenceScore)
 
-    // Select top 3 creators
-    const topMatches = scoredCreators.slice(0, 3)
-
-    // Delete previous AI_PROPOSED matches for this job
-    await prisma.match.deleteMany({
-      where: { jobId, status: "AI_PROPOSED" },
-    })
-
-    // Save top matches to database
-    const savedMatches = await Promise.all(
-      topMatches.map((m, index) =>
-        prisma.match.create({
-          data: {
-            jobId: job.id,
-            creatorId: m.creator.id,
-            confidenceScore: m.confidenceScore,
-            rank: index + 1,
-            status: "AI_PROPOSED",
-            aiReasoning: m.reasoning,
-          },
-          include: {
-            creator: { include: { user: true, skills: { include: { skill: true } } } },
-            job: true,
-          },
-        })
-      )
-    )
-
-    // Update job status to MATCHING
-    await prisma.job.update({
-      where: { id: jobId },
-      data: { status: "MATCHING" },
-    })
-
-    return savedMatches
-  } catch (err) {
-    console.error("Matchmaker Error:", err)
-    return []
+    aiMatches = scoredCreators.slice(0, 3).map((item, idx) => ({
+      creatorId: item.creatorId,
+      confidenceScore: item.confidenceScore,
+      rank: idx + 1,
+      aiReasoning: `Matched ${item.matchingSkills.length} core required skill(s): ${item.matchingSkills.join(", ")}. Creator level matches job requirement (${job.requiredLevel}).`,
+    }))
   }
+
+  // 4. Update Database: Clear old matches for job and create new AI_PROPOSED Match records
+  await prisma.match.deleteMany({ where: { jobId } })
+
+  const createdMatches = []
+  for (const matchItem of aiMatches) {
+    const matchRecord = await prisma.match.create({
+      data: {
+        jobId,
+        creatorId: matchItem.creatorId,
+        confidenceScore: matchItem.confidenceScore,
+        rank: matchItem.rank,
+        aiReasoning: matchItem.aiReasoning,
+        status: "AI_PROPOSED",
+      },
+      include: {
+        creator: { include: { user: true, skills: { include: { skill: true } } } },
+        job: true,
+      },
+    })
+    createdMatches.push(matchRecord)
+  }
+
+  return createdMatches
 }

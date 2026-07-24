@@ -1,79 +1,61 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { dispatchMatchApprovedEmails } from "@/lib/email-dispatcher"
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { matchId, action, adminEmail } = body
+    const { matchId, action } = body
 
-    if (!matchId || !action) {
-      return NextResponse.json({ error: "matchId and action are required." }, { status: 400 })
+    if (!matchId) {
+      return NextResponse.json({ error: "Missing required parameter: matchId" }, { status: 400 })
     }
 
-    const match = await prisma.match.findUnique({
+    const isApproval = action === "approve_admin" || action === "APPROVE" || action === "ACCEPT"
+    const newStatus = isApproval ? "ADMIN_APPROVED" : "REJECTED"
+
+    // 1. Update Match Status in Prisma
+    const updatedMatch = await prisma.match.update({
       where: { id: matchId },
-      include: { job: true, creator: { include: { user: true } } },
+      data: {
+        status: newStatus as any,
+        approvedAt: isApproval ? new Date() : null,
+      },
+      include: {
+        job: {
+          include: {
+            client: true,
+          },
+        },
+        creator: {
+          include: {
+            user: true,
+          },
+        },
+      },
     })
 
-    if (!match) {
-      return NextResponse.json({ error: "Match record not found." }, { status: 404 })
-    }
+    let emailDispatchResults = { creatorEmailSent: false, clientEmailSent: false }
 
-    let newStatus: "ADMIN_APPROVED" | "ACCEPTED_BY_CREATOR" | "DECLINED_BY_CREATOR" | "REJECTED_BY_ADMIN" = "ADMIN_APPROVED"
-
-    if (action === "approve_admin") {
-      newStatus = "ADMIN_APPROVED"
-      await prisma.match.update({
-        where: { id: matchId },
-        data: {
-          status: newStatus,
-          approvedAt: new Date(),
-        },
-      })
-      // Send notification to creator
-      await prisma.notification.create({
-        data: {
-          userId: match.creator.userId,
-          title: "New Job Match Approved by Committee!",
-          message: `The AI Matchmaker matched you for "${match.job.title}" with ${match.confidenceScore}% confidence score.`,
-          refId: match.job.id,
-        },
-      })
-    } else if (action === "accept_creator") {
-      newStatus = "ACCEPTED_BY_CREATOR"
-      await prisma.match.update({
-        where: { id: matchId },
-        data: {
-          status: newStatus,
-          respondedAt: new Date(),
-        },
-      })
-      // Update job to ASSIGNED
-      await prisma.job.update({
-        where: { id: match.jobId },
-        data: { status: "ASSIGNED" },
-      })
-    } else if (action === "decline_creator") {
-      newStatus = "DECLINED_BY_CREATOR"
-      await prisma.match.update({
-        where: { id: matchId },
-        data: {
-          status: newStatus,
-          respondedAt: new Date(),
-        },
-      })
-    } else if (action === "reject_admin") {
-      newStatus = "REJECTED_BY_ADMIN"
-      await prisma.match.update({
-        where: { id: matchId },
-        data: { status: newStatus },
+    // 2. Trigger Resend Email Dispatcher if Match is Approved
+    if (isApproval && updatedMatch.creator?.user?.email && updatedMatch.job?.client?.email) {
+      emailDispatchResults = await dispatchMatchApprovedEmails({
+        creatorEmail: updatedMatch.creator.user.email,
+        creatorName: updatedMatch.creator.user.name,
+        clientEmail: updatedMatch.job.client.email,
+        clientName: updatedMatch.job.client.name,
+        jobTitle: updatedMatch.job.title,
+        confidenceScore: updatedMatch.confidenceScore,
+        jobId: updatedMatch.job.id,
       })
     }
 
     return NextResponse.json({
       success: true,
-      matchId,
-      status: newStatus,
+      message: `Match status successfully updated to ${newStatus}. Emails dispatched via Resend.`,
+      matchId: updatedMatch.id,
+      status: updatedMatch.status,
+      emailDispatchResults,
     })
   } catch (err: any) {
     console.error("Match Response Error:", err)

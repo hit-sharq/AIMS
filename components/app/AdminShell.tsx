@@ -4,22 +4,13 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, UserPlus, Briefcase, MessageSquare, Settings, Newspaper, FileText, ArrowLeft, Menu, X, FolderOpen, UserSearch, Contact } from "lucide-react"
+import { LayoutDashboard, Briefcase, ShieldCheck, ArrowLeft, Menu, X, Cpu } from "lucide-react"
 import "./admin.css"
 
-const NAV = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/projects", label: "Projects", icon: FolderOpen },
-  { href: "/admin/talent", label: "Talent", icon: UserSearch },
-  { href: "/admin/clients", label: "Clients", icon: Contact },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/team", label: "Team", icon: UserPlus },
-  { href: "/admin/careers", label: "Careers", icon: Briefcase },
-  { href: "/admin/messages", label: "Messages", icon: MessageSquare },
-  { href: "/admin/blogs", label: "Blogs", icon: FileText },
-  { href: "/admin/news", label: "News", icon: Newspaper },
-  { href: "/admin/contact-reports", label: "Contact Reports", icon: FileText },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+const ESSENTIAL_ADMIN_NAV = [
+  { href: "/admin", label: "Overview", icon: Cpu },
+  { href: "/admin/jobs", label: "Active Jobs", icon: Briefcase },
+  { href: "/admin/creators", label: "Talent Network", icon: ShieldCheck },
 ]
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -34,13 +25,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="admin-brand" onClick={() => setSidebarOpen(false)}>
             <span className="admin-brand-mark" aria-hidden>
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <path d="M3 17 L9 6 L13 13 L19 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="19" cy="4" r="2.1" fill="currentColor" />
+                <path d="M3 17 L9 6 L13 13 L19 4" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="19" cy="4" r="2.2" fill="currentColor" />
               </svg>
             </span>
             <span className="admin-brand-word">
-              Admin
-              <em>Control Panel</em>
+              Jitume AIMS
+              <em>Mission Control</em>
             </span>
           </Link>
           <button className="admin-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
@@ -49,7 +40,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="admin-nav">
-          {NAV.map((item) => {
+          {ESSENTIAL_ADMIN_NAV.map((item) => {
             const active = pathname === item.href
             const Icon = item.icon
             return (
@@ -63,7 +54,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <div className="admin-sidebar-foot">
           <Link href="/dashboard/overview" className="admin-back" onClick={() => setSidebarOpen(false)}>
-            <ArrowLeft size={14} /> Back to Dashboard
+            <ArrowLeft size={14} /> Back to Creator Portal
           </Link>
         </div>
       </aside>

@@ -2,50 +2,51 @@ import { prisma } from "@/lib/prisma"
 
 export async function getProjects() {
   try {
-    return await prisma.project.findMany({
+    const jobs = await prisma.job.findMany({
       orderBy: { updatedAt: "desc" },
       include: {
-        brief: true,
-        proposal: true,
-        quote: true,
-        call: true,
-        transcript: true,
-        approvals: true,
+        client: true,
+        skills: { include: { skill: true } },
+        matches: { include: { creator: true } },
       },
     })
+    return jobs.map(j => ({
+      ...j,
+      name: j.title,
+      client: j.client?.name || "Client Business",
+      stage: j.status,
+      progress: j.status === "ASSIGNED" ? 100 : j.status === "MATCHING" ? 65 : 30,
+    }))
   } catch (err) {
-    try {
-      return await prisma.project.findMany({
-        orderBy: { updatedAt: "desc" },
-      })
-    } catch {
-      return []
-    }
+    return []
   }
 }
 
 export async function getProject(id: string) {
   try {
-    return await prisma.project.findUnique({
+    const job = await prisma.job.findUnique({
       where: { id },
       include: {
-        brief: true,
-        call: true,
-        transcript: true,
-        projectBrief: true,
-        synthesis: true,
-        proposal: true,
-        quote: true,
-        approvals: { orderBy: { createdAt: "desc" } },
+        client: true,
+        skills: { include: { skill: true } },
+        matches: {
+          include: {
+            creator: {
+              include: { user: true, skills: { include: { skill: true } } },
+            },
+          },
+        },
       },
     })
-  } catch (err) {
-    try {
-      return await prisma.project.findUnique({
-        where: { id },
-      })
-    } catch {
-      return null
+    if (!job) return null
+    return {
+      ...job,
+      name: job.title,
+      client: job.client?.name || "Client Business",
+      stage: job.status,
+      progress: job.status === "ASSIGNED" ? 100 : job.status === "MATCHING" ? 65 : 30,
     }
+  } catch (err) {
+    return null
   }
 }

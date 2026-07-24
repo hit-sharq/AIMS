@@ -6,33 +6,22 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   FolderOpen,
-  FileText,
-  MessageSquare,
-  Calendar,
-  Brain,
-  Users,
-  FileSignature,
-  Calculator,
-  CheckCircle,
+  UserCheck,
+  Briefcase,
   ChevronLeft,
   ChevronRight,
   X,
-  GitBranch,
+  Cpu,
 } from "lucide-react"
 import { useState } from "react"
 
 import "./dashboard.css"
 
-const NAV = [
+const CREATOR_NAV = [
   { href: "/dashboard/overview", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/pipeline", label: "Pipeline", icon: GitBranch },
-  { href: "/dashboard/projects", label: "Projects", icon: FolderOpen },
-  { href: "/dashboard/briefs", label: "Briefs", icon: FileText },
-  { href: "/dashboard/meetings", label: "Meetings", icon: Calendar },
-  { href: "/dashboard/proposals", label: "Proposals", icon: FileSignature },
-  { href: "/dashboard/quotes", label: "Quotes", icon: Calculator },
-  { href: "/dashboard/approvals", label: "Approvals", icon: CheckCircle },
-  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
+  { href: "/dashboard/projects", label: "Matched Jobs", icon: FolderOpen },
+  { href: "/dashboard/contracts", label: "Active Contracts", icon: Briefcase },
+  { href: "/onboarding/creator", label: "My Profile", icon: UserCheck },
 ]
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -48,14 +37,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="dash-brand" onClick={() => setMobileOpen(false)}>
             <span className="dash-brand-mark" aria-hidden>
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                <path d="M3 17 L9 6 L13 13 L19 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="19" cy="4" r="2.1" fill="currentColor" />
+                <path d="M3 17 L9 6 L13 13 L19 4" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="19" cy="4" r="2.2" fill="currentColor" />
               </svg>
             </span>
             {!collapsed && (
               <span className="dash-brand-word">
-                Synthos
-                <em>Creative Intelligence</em>
+                Jitume AIMS
+                <em>Creator Portal</em>
               </span>
             )}
           </Link>
@@ -70,7 +59,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="dash-nav">
-          {NAV.map((item) => {
+          {CREATOR_NAV.map((item) => {
             const active = pathname === item.href || (item.href !== "/dashboard/overview" && pathname.startsWith(item.href))
             const Icon = item.icon
             return (
@@ -85,7 +74,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div className="dash-sidebar-foot">
           <span className="dash-ai-status">
             <span className="dash-ai-dot" />
-            {!collapsed && <span>AI online</span>}
+            {!collapsed && <span>AI Matcher Active</span>}
           </span>
         </div>
       </aside>

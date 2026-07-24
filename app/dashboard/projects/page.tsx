@@ -1,107 +1,103 @@
 export const dynamic = 'force-dynamic'
 
+import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { getProjects } from "@/lib/data-server"
-import { PageHead, PageWrap } from "@/components/app/Page"
-import { StatusPill, Progress, Empty, Panel } from "@/components/app/ui"
-import CreateProjectForm from "../overview/CreateProjectForm"
-import "./app.css"
+import { PageWrap } from "@/components/app/Page"
+import { Sparkles, ShieldCheck, Briefcase, Cpu, CheckCircle2, ArrowRight } from "lucide-react"
+import CreatorMatchedJobsWidget from "./CreatorMatchedJobsWidget"
 
-type View = "grid" | "list"
-type Sort = "activity" | "progress" | "name"
-
-function stageLabel(s: any) {
-  return s?.stage ? s.stage.replace(/([A-Z])/g, " $1").replace(/^./, (m: string) => m.toUpperCase()) : "—"
-}
-
-export default async function ProjectsPage({ searchParams }: { searchParams: { q?: string; view?: string; sort?: string; filter?: string } }) {
-  const projects = await getProjects()
-  const q = searchParams.q || ""
-  const view = (searchParams.view as View) || "grid"
-  const sort = (searchParams.sort as Sort) || "activity"
-  const filter = searchParams.filter || "all"
-
-  const filtered = (projects || []).filter((p: any) => {
-    const matchQ = !q || `${p.name} ${p.client} ${p.type}`.toLowerCase().includes(q.toLowerCase())
-    const matchF = filter === "all" || p.status === filter
-    return matchQ && matchF
+export default async function CreatorMatchedJobsPage() {
+  // Fetch sample/first creator profile
+  const creator = await prisma.creatorProfile.findFirst({
+    include: {
+      user: true,
+      skills: { include: { skill: true } },
+      matches: {
+        orderBy: { confidenceScore: "desc" },
+        include: {
+          job: {
+            include: {
+              client: true,
+              skills: { include: { skill: true } },
+            },
+          },
+        },
+      },
+    },
   })
-  const sorted = [...filtered].sort((a, b) => {
-    if (sort === "name") return a.name.localeCompare(b.name)
-    if (sort === "progress") return (b.progress || 0) - (a.progress || 0)
-    return (b.aiActivity || 0) - (a.aiActivity || 0)
+
+  // Fetch all active jobs in marketplace
+  const allJobs = await prisma.job.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      skills: { include: { skill: true } },
+      matches: { include: { creator: true } },
+    },
   })
 
   return (
     <PageWrap>
-      <PageHead
-        eyebrow="Workspace"
-        title="Projects"
-        desc="Every client engagement, tracked through the Human + AI workflow from brief to approval."
-        actions={<Link href="/dashboard/overview" className="btn btn-ghost">Overview</Link>}
-      />
+      <div className="py-6 space-y-8">
+        
+        {/* Creator Identity & Skill Tags Dock */}
+        <div className="glass-panel p-6 sm:p-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="eyebrow inline-flex items-center gap-1">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                Verified Creator Supply Profile
+              </span>
+              {creator && (
+                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-0.5 font-mono text-xs font-bold text-emerald-700">
+                  {creator.level} LEVEL
+                </span>
+              )}
+            </div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              {creator ? creator.user.name : "Sharlmon Musundi"}
+            </h1>
+            <p className="text-sm font-mono text-indigo-600 font-semibold mt-0.5">
+              {creator ? creator.title : "Senior Full-Stack Engineer & AI Architect"}
+            </p>
+          </div>
 
-      <form className="proj-toolbar" method="get">
-        <div className="search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input className="input" name="q" placeholder="Search projects, clients, types…" defaultValue={q} style={{ border: "none", padding: "10px 0", background: "transparent" }} />
-        </div>
-        <div className="row gap-2">
-          <select className="select" name="filter" defaultValue={filter} style={{ width: "auto" }}>
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="attention">Needs attention</option>
-            <option value="review">In review</option>
-            <option value="complete">Complete</option>
-          </select>
-          <select className="select" name="sort" defaultValue={sort} style={{ width: "auto" }}>
-            <option value="activity">Sort: Recent activity</option>
-            <option value="progress">Sort: Progress</option>
-            <option value="name">Sort: Name</option>
-          </select>
-          <div className="viewtoggle">
-            <button type="submit" name="view" value="grid" className={view === "grid" ? "active" : ""} aria-label="Grid view">▦</button>
-            <button type="submit" name="view" value="list" className={view === "list" ? "active" : ""} aria-label="List view">≡</button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-mono text-slate-500 font-bold">Active Skill Tags:</span>
+            {creator?.skills.map((cs) => (
+              <span key={cs.id} className="rounded-full bg-white border border-slate-200 px-3 py-1 font-mono text-xs font-semibold text-slate-800 shadow-2xs">
+                {cs.skill.name}
+              </span>
+            ))}
           </div>
         </div>
-      </form>
 
-      {(projects || []).length === 0 ? (
-        <Panel>
-          <div style={{ padding: 40, textAlign: "center" }}>
-            <Empty title="No projects yet" hint="Create your first project to begin the workflow." />
-            <div style={{ marginTop: 18 }}><CreateProjectForm /></div>
+        {/* AI Matched Jobs Section */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                <Cpu className="h-5 w-5 text-indigo-600" />
+                AI Routed & Matched Jobs Pool
+              </h2>
+              <p className="text-xs text-slate-600 font-sans mt-0.5">
+                Jobs automatically routed to your profile based on skill overlap and capability scoring. Accept or decline to initiate contract.
+              </p>
+            </div>
           </div>
-        </Panel>
-      ) : sorted.length === 0 ? (
-        <Empty title="No matches" hint="Try adjusting your search or filters." />
-      ) : (
-        <div className={view === "grid" ? "proj-grid" : "proj-list"}>
-          {sorted.map((p: any) => (
-            <Link key={p.id} href={`/dashboard/projects/${p.id}`} className={view === "grid" ? "proj-card" : "proj-row"}>
-              <div className="row between gap-2">
-                <span className="proj-type">{p.type}</span>
-                <StatusPill status={p.status} />
-              </div>
-              <h3 style={{ fontSize: "1.15rem", marginTop: 10 }}>{p.name}</h3>
-              <p className="tiny muted">{p.client}</p>
-              <div className="proj-stage">
-                <span className="dot" style={{ background: "var(--signal)" }} />
-                <span className="tiny" style={{ color: "var(--ink-2)", fontWeight: 500 }}>{stageLabel(p)}</span>
-              </div>
-              <div className="proj-meta">
-                <span className="tiny muted">Progress</span>
-                <Progress value={p.progress || 0} />
-                <span className="mono tiny muted">{p.progress || 0}%</span>
-              </div>
-              <div className="proj-foot">
-                <span className="tiny muted">{new Date(p.lastActivity || Date.now()).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
-                <span className="tiny" style={{ color: "var(--signal-ink)" }}>{p.nextAction || "—"}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+
+          {!creator || creator.matches.length === 0 ? (
+            <div className="glass-panel p-10 text-center text-slate-500">
+              <p className="text-lg font-bold text-slate-900">No matched jobs pending</p>
+              <p className="text-xs font-mono text-slate-600 mt-1">
+                The AI Matchmaker runs comparison scripts continuously whenever a client submits a 10-Second Micro-Intake.
+              </p>
+            </div>
+          ) : (
+            <CreatorMatchedJobsWidget matches={creator.matches} />
+          )}
+        </section>
+
+      </div>
     </PageWrap>
   )
 }

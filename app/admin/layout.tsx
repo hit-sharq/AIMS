@@ -1,10 +1,9 @@
-import { AdminShell } from "@/components/app/AdminShell"
-import { auth } from "@clerk/nextjs/server"
-import { redirect } from "next/navigation"
+import type React from "react"
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = await auth()
-  if (!userId) redirect("/sign-in")
-
-  return <AdminShell>{children}</AdminShell>
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="w-full min-h-screen bg-[#f8fafc] pt-24 px-4 sm:px-6 lg:px-8">
+      {children}
+    </main>
+  )
 }

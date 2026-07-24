@@ -1,184 +1,95 @@
 import Link from "next/link"
-import { prisma } from "@/lib/prisma"
-import "./home.css"
-import "@/components/app/blog.css"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
-export default async function Home() {
-  const recentBlog = (prisma as any).post
-    ? await (prisma as any).post.findMany({
-        where: { kind: "blog", status: "published" },
-        orderBy: { publishedAt: "desc" },
-        take: 3,
-      }).catch(() => [])
-    : []
-
-  const recentNews = (prisma as any).post
-    ? await (prisma as any).post.findMany({
-        where: { kind: "news", status: "published" },
-        orderBy: { publishedAt: "desc" },
-        take: 3,
-      }).catch(() => [])
-    : []
-
+export default function HomePage() {
   return (
-    <main>
-      <section className="hero">
-        <div className="hero-bg-glow" />
-        <div className="container hero-container">
-          <span className="eyebrow">Creative Intelligence Platform</span>
-          <h1 className="hero-title">
-            AI accelerates the work.<br />
-            <span className="hero-human">Humans provide the judgment.</span>
-          </h1>
-          <p className="hero-lede">
-            Synthos turns client conversations and creative briefs into structured project intelligence, strategic direction, proposals, quotes, and human-approved deliverables.
-          </p>
-          <div className="row gap-3 wrap" style={{ justifyContent: "center" }}>
-            <Link href="/dashboard/overview" className="btn btn-signal btn-lg">Open workspace →</Link>
-            <Link href="/dashboard/projects" className="btn btn-ghost btn-lg">View projects</Link>
-          </div>
-          <div className="row gap-2 wrap" style={{ justifyContent: "center", marginTop: 22 }}>
-            <span className="tag-ai"><span className="dot dot-ai" /> AI assists</span>
-            <span className="tag-human"><span className="dot dot-human" /> Humans decide</span>
-          </div>
+    <main className="min-h-screen w-full flex flex-col items-center overflow-x-hidden bg-[#f8fafc]">
+      {/* 2. THE HERO SECTION (Strictly Centered) */}
+      <section className="w-full flex flex-col items-center justify-center text-center pt-32 pb-20 max-w-5xl mx-auto px-4">
+        {/* Tagline */}
+        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-sm font-medium mb-6">
+          ✨ Jitume AIMS · AI-Driven Talent Marketplace
+        </div>
+        {/* Headline */}
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 w-full text-center leading-[1.1]">
+          AI Matchmaker Connecting <br className="hidden sm:inline" /> Demand &amp; Verified Talent.
+        </h1>
+        {/* Subtitle */}
+        <p className="max-w-2xl mx-auto text-lg text-slate-600 mt-6 leading-relaxed text-center">
+          Jitume AIMS acts as an automated, intelligent middleman. Clients post needs via 10-Second Micro-Intake, Creators list verified skill tags, and AI matches them with 95%+ confidence scoring.
+        </p>
+        {/* Buttons */}
+        <div className="flex flex-row items-center justify-center gap-4 mt-10 w-full">
+          <Link
+            href="/intake"
+            className="px-8 py-4 bg-slate-900 text-white rounded-full font-medium hover:bg-slate-800 transition-colors shadow-md"
+          >
+            Post a Job →
+          </Link>
+          <Link
+            href="/onboarding/creator"
+            className="px-8 py-4 bg-white/60 backdrop-blur-md border border-slate-200 text-slate-900 rounded-full font-medium hover:bg-white transition-colors shadow-xs"
+          >
+            Join as Creator
+          </Link>
         </div>
       </section>
 
-      <section className="section">
-        <div className="container">
-          <div className="workflow-steps">
-            {[
-              ["1", "Brief", "Capture client needs and objectives."],
-              ["2", "First Meeting", "Discovery call with the client."],
-              ["3", "Contact Report", "AI-generated summary for client confirmation."],
-              ["4", "Production Meeting", "Team and client align on scope and approach."],
-              ["5", "Proposal", "Account manager drafts the proposal."],
-              ["6", "Quote", "Professional quote ready for client."],
-              ["7", "Approval", "Client accepts and the gig starts."],
-            ].map(([n, t, d]) => (
-              <div key={n as string} className="wf-step">
-                <span className="wf-num">{n as string}</span>
-                <h3>{t as string}</h3>
-                <p className="tiny muted">{d as string}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* 3. THE 3-STEP GRID (Strictly 3 Columns) */}
+      <section className="w-full max-w-6xl mx-auto px-6 pb-24">
+        <h2 className="text-3xl font-bold text-center w-full mb-12 text-slate-900">
+          Automated 3-Step Marketplace Engine
+        </h2>
 
-      {(recentBlog.length > 0 || recentNews.length > 0) && (
-        <section style={{ borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
-          <div className="container">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 28, paddingTop: 48 }}>
-              <span className="eyebrow">Stay updated</span>
-              <div style={{ display: "flex", gap: 12 }}>
-                {recentBlog.length > 0 && <Link href="/blog" className="btn btn-ghost btn-sm">All blog posts →</Link>}
-                {recentNews.length > 0 && <Link href="/news" className="btn btn-ghost btn-sm">All news →</Link>}
-              </div>
-            </div>
-
-            {recentBlog.length > 0 && (
-              <div style={{ marginBottom: 40 }}>
-                <span className="eyebrow" style={{ textTransform: "capitalize", color: "var(--signal)", marginBottom: 12, display: "block" }}>Blog</span>
-                <div className="blog-grid">
-                  {recentBlog.map((post: any) => (
-                    <article key={post.id} className="glass-card">
-                      {post.coverImage && (
-                        <div className="blog-card-img">
-                          <img src={post.coverImage} alt={post.title} />
-                        </div>
-                      )}
-                      <div className="blog-card-body">
-                        <span className="eyebrow">{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : ""}</span>
-                        <h3>{post.title}</h3>
-                        {post.excerpt && <p className="tiny muted">{post.excerpt}</p>}
-                        <Link href={`/blog/${post.slug}`} className="btn btn-ghost btn-sm">Read more →</Link>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {recentNews.length > 0 && (
-              <div style={{ paddingBottom: 48 }}>
-                <span className="eyebrow" style={{ textTransform: "capitalize", color: "var(--ai)", marginBottom: 12, display: "block" }}>News</span>
-                <div className="blog-grid">
-                  {recentNews.map((post: any) => (
-                    <article key={post.id} className="glass-card">
-                      {post.coverImage && (
-                        <div className="blog-card-img">
-                          <img src={post.coverImage} alt={post.title} />
-                        </div>
-                      )}
-                      <div className="blog-card-body">
-                        <span className="eyebrow">{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : ""}</span>
-                        <h3>{post.title}</h3>
-                        {post.excerpt && <p className="tiny muted">{post.excerpt}</p>}
-                        <Link href={`/news/${post.slug}`} className="btn btn-ghost btn-sm">Read more →</Link>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      <section className="section" style={{ background: "rgba(255, 255, 255, 0.6)", backdropFilter: "blur(20px)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
-        <div className="container" style={{ maxWidth: 780, textAlign: "center" }}>
-          <span className="eyebrow">Built for creative teams</span>
-          <h2 className="display" style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", marginBottom: 18, marginTop: 12 }}>The operating system for creative intelligence</h2>
-          <p className="lede" style={{ marginBottom: 28 }}>
-            From the first creative brief to the final human approval, Synthos keeps the entire creative intelligence workflow in one calm, considered workspace.
-          </p>
-          <div className="row gap-3 wrap" style={{ justifyContent: "center" }}>
-            <Link href="/dashboard/overview" className="btn btn-signal btn-lg">Get started →</Link>
-            <Link href="/intake" className="btn btn-ghost btn-lg">Start a project →</Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <div className="features">
-            <div className="feat">
-              <h3>Briefs & Calls</h3>
-              <p className="tiny muted">Capture client briefs and discovery calls with intelligence built in.</p>
-            </div>
-            <div className="feat">
-              <h3>AI Understanding</h3>
-              <p className="tiny muted">The system extracts structured intelligence — wants, objectives, constraints, risks, missing info.</p>
-            </div>
-            <div className="feat">
-              <h3>Workshops</h3>
-              <p className="tiny muted">Human + AI collaboration to build strategic direction together.</p>
-            </div>
-            <div className="feat">
-              <h3>Proposals & Quotes</h3>
-              <p className="tiny muted">Professional deliverables with clear AI/human attribution on every section.</p>
-            </div>
-            <div className="feat">
-              <h3>Approval Center</h3>
-              <p className="tiny muted">A dedicated gate for human review — AI assists, humans decide.</p>
-            </div>
-            <div className="feat">
-              <h3>Workflow Visibility</h3>
-              <p className="tiny muted">See every project's stage, progress, and what needs attention next.</p>
+        {/* THIS IS THE GRID WRAPPER */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+          {/* Card 1 */}
+          <div className="bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-3xl p-8 flex flex-col items-start w-full space-y-3">
+            <span className="font-mono text-xs font-bold text-indigo-600 uppercase tracking-wider">
+              Step 01
+            </span>
+            <h3 className="text-xl font-bold text-slate-900">1. Client Demand</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Clients post project deliverables via a 10-Second Micro-Intake. The system records an active job and initiates AI scanning.
+            </p>
+            <div className="pt-2">
+              <Link href="/intake" className="text-xs font-mono font-bold text-indigo-600 hover:underline">
+                Submit Intake →
+              </Link>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="section foot-cta">
-        <div className="container" style={{ textAlign: "center" }}>
-          <div className="foot-cta-inner">
-            <h2 className="display" style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", marginBottom: 14 }}>Ready to move work forward?</h2>
-            <p className="lede" style={{ marginBottom: 28 }}>Open your workspace and see what needs your attention next.</p>
-            <Link href="/dashboard/overview" className="btn btn-signal btn-lg">Open Synthos →</Link>
+          {/* Card 2 */}
+          <div className="bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-3xl p-8 flex flex-col items-start w-full space-y-3">
+            <span className="font-mono text-xs font-bold text-emerald-600 uppercase tracking-wider">
+              Step 02
+            </span>
+            <h3 className="text-xl font-bold text-slate-900">2. Creator Supply</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Creators complete onboarding with GitHub/portfolio links and skill tags. AI Gateway tags experience levels.
+            </p>
+            <div className="pt-2">
+              <Link href="/onboarding/creator" className="text-xs font-mono font-bold text-emerald-600 hover:underline">
+                Onboard Profile →
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="bg-white/70 backdrop-blur-xl border border-white shadow-lg rounded-3xl p-8 flex flex-col items-start w-full space-y-3">
+            <span className="font-mono text-xs font-bold text-purple-600 uppercase tracking-wider">
+              Step 03
+            </span>
+            <h3 className="text-xl font-bold text-slate-900">3. Admin Oversight</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Mission Control operators view the Match Matrix and trigger one-click approval with confidence scores.
+            </p>
+            <div className="pt-2">
+              <Link href="/admin" className="text-xs font-mono font-bold text-purple-600 hover:underline">
+                Mission Control →
+              </Link>
+            </div>
           </div>
         </div>
       </section>

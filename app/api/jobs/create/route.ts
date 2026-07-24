@@ -1,74 +1,81 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { runScoperAgent } from "@/lib/agents/scoper"
 import { runMatchmakerForJob } from "@/lib/matchmaker"
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { title, description, projectType, budgetMin, budgetMax, timeline, requiredLevel, skills, clientEmail, clientName } = body
+    const { clientName, clientEmail, companyName, title, description, projectType, budgetMin, budgetMax, timeline } = body
 
-    if (!title || !description) {
-      return NextResponse.json({ error: "Job title and description are required." }, { status: 400 })
+    if (!clientEmail || !title || !description) {
+      return NextResponse.json({ error: "Missing required fields: clientEmail, title, description." }, { status: 400 })
     }
 
-    const email = clientEmail || "client@jitume.com"
-    const name = clientName || "Client Business"
+    // 1. Trigger Agent 2: Scoper Agent
+    const scoperOutput = await runScoperAgent(title, description, budgetMax ? Number(budgetMax) : undefined)
 
-    // 1. Ensure Client User exists
-    let clientUser = await prisma.user.findUnique({ where: { email } })
-    if (!clientUser) {
-      clientUser = await prisma.user.create({
-        data: {
-          email,
-          name,
-          role: "CLIENT",
-          clientProfile: { create: { companyName: name, industry: projectType || "Technology" } },
+    // 2. Upsert Client User & Profile
+    const clientUser = await prisma.user.upsert({
+      where: { email: clientEmail },
+      create: {
+        email: clientEmail,
+        name: clientName || "Valued Client",
+        role: "CLIENT",
+        clientProfile: {
+          create: {
+            companyName: companyName || clientName || "Independent Client",
+            industry: projectType || "Technology",
+          },
         },
-      })
-    }
+      },
+      update: {
+        name: clientName || undefined,
+      },
+    })
 
-    // 2. Create Job
+    // 3. Create Job Record (status: ACTIVE)
     const job = await prisma.job.create({
       data: {
         clientId: clientUser.id,
         title,
         description,
-        projectType: projectType || "E-Commerce",
-        budgetMin: budgetMin ? parseFloat(budgetMin) : 5000,
-        budgetMax: budgetMax ? parseFloat(budgetMax) : 25000,
-        timeline: timeline || "8 Weeks",
-        requiredLevel: requiredLevel || "MID",
+        projectType: projectType || "Full-Stack Web App",
+        budgetMin: budgetMin ? Number(budgetMin) : 10000,
+        budgetMax: budgetMax ? Number(budgetMax) : 30000,
+        budgetCurrency: "USD",
+        timeline: timeline || "6 Weeks",
+        requiredLevel: scoperOutput.requiredLevel as any,
         status: "ACTIVE",
       },
     })
 
-    // 3. Process Skill Tags
-    const skillList: string[] = Array.isArray(skills) && skills.length > 0
-      ? skills
-      : [projectType || "E-Commerce", "Full-Stack", "UI/UX"]
-
-    for (const skillName of skillList) {
-      const trimmed = skillName.trim()
-      if (!trimmed) continue
-
-      let skill = await prisma.skill.findUnique({ where: { name: trimmed } })
-      if (!skill) {
-        skill = await prisma.skill.create({ data: { name: trimmed, category: "Technology" } })
-      }
-
-      await prisma.jobSkill.upsert({
-        where: { jobId_skillId: { jobId: job.id, skillId: skill.id } },
-        create: { jobId: job.id, skillId: skill.id, weight: 85 },
+    // 4. Create JobSkills in Prisma
+    for (const rSkill of scoperOutput.requiredSkills) {
+      const skill = await prisma.skill.upsert({
+        where: { name: rSkill.name },
+        create: { name: rSkill.name, category: "Technology" },
         update: {},
+      })
+
+      await prisma.jobSkill.create({
+        data: {
+          jobId: job.id,
+          skillId: skill.id,
+          weight: rSkill.weight || 90,
+          isRequired: true,
+        },
       })
     }
 
-    // 4. Run AI Match Matrix
+    // 5. Trigger Agent 3: Match Matrix Engine automatically
     const matches = await runMatchmakerForJob(job.id)
 
     return NextResponse.json({
       success: true,
-      job,
+      message: "Job intake successfully scoped and active! Match Matrix Engine triggered.",
+      jobId: job.id,
+      scoperOutput,
       matchesCount: matches.length,
       matches,
     })
