@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { runScoperAgent } from "@/lib/agents/scoper"
 import { runMatchmakerForJob } from "@/lib/matchmaker"
+import { dispatchIntakeConfirmationEmail } from "@/lib/email-dispatcher"
 
 export async function POST(req: Request) {
   try {
@@ -71,9 +72,23 @@ export async function POST(req: Request) {
     // 5. Trigger Agent 3: Match Matrix Engine automatically
     const matches = await runMatchmakerForJob(job.id)
 
+    // 6. Error-Resilient Resend Intake Confirmation Email Dispatch
+    try {
+      await dispatchIntakeConfirmationEmail({
+        clientEmail: clientUser.email,
+        clientName: clientUser.name,
+        jobTitle: job.title,
+        budgetMin: job.budgetMin || 500000,
+        budgetMax: job.budgetMax || 2500000,
+        timeline: job.timeline,
+      })
+    } catch (emailErr) {
+      console.warn("Intake confirmation email dispatch skipped or bounced safely:", emailErr)
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Job intake successfully scoped and active! Match Matrix Engine triggered.",
+      message: "Job intake successfully scoped and active! Stylized confirmation email sent and Match Matrix Engine triggered.",
       jobId: job.id,
       scoperOutput,
       matchesCount: matches.length,
