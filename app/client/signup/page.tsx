@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { useSignUp, useClerk } from "@clerk/nextjs"
+import { ClerkProvider, useSignUp, useClerk } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-export default function ClientSignupPage() {
+function ClientSignupContent() {
   const { signUp, isLoaded: signUpLoaded } = useSignUp()
   const { setActive } = useClerk()
   const router = useRouter()
@@ -92,5 +92,13 @@ export default function ClientSignupPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function ClientSignupPage() {
+  return (
+    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder"}>
+      <ClientSignupContent />
+    </ClerkProvider>
   )
 }
