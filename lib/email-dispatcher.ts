@@ -314,3 +314,96 @@ export async function dispatchMatchApprovedEmails(params: {
 
   return results
 }
+
+export async function dispatchCreatorWelcomeEmail(params: {
+  creatorEmail: string
+  creatorName: string
+  skillNames: string[]
+  level?: string
+}) {
+  const { creatorEmail, creatorName, skillNames, level } = params
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+
+  try {
+    const subject = "Welcome to Jitume AIMS: Your Creator Profile is Live"
+    const skillsListHtml = skillNames.length > 0
+      ? skillNames.map((s) => `<li style="padding: 4px 0; color: #334155; font-weight: 600;">${s}</li>`).join("")
+      : `<li style="padding: 4px 0; color: #334155;">Full-Stack Development</li>`
+
+    const html = `
+      <div style="background-color: #f8fafc; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+          
+          <!-- Brand Header -->
+          <div style="border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12px; font-family: monospace; font-weight: bold; color: #4f46e5; letter-spacing: 0.5px; text-transform: uppercase;">
+              Jitume AIMS · AI-Driven Talent Marketplace
+            </span>
+          </div>
+
+          <!-- Status Badge -->
+          <div style="margin-bottom: 20px;">
+            <span style="display: inline-block; background-color: #d1fae5; border: 1px solid #a7f3d0; color: #065f46; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: bold; font-family: monospace;">
+              ✓ Creator Profile Active
+            </span>
+          </div>
+
+          <!-- Greeting -->
+          <h2 style="color: #0f172a; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 8px;">
+            Hello ${creatorName || "Verified Creator"},
+          </h2>
+          <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+            Thank you for joining our verified talent network. Your technical skills have been indexed by our AI Talent Profiler Agent.
+          </p>
+
+          <!-- Inset Skills Box -->
+          <div style="background-color: #f1f5f9; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; margin: 24px 0;">
+            <h4 style="color: #0f172a; font-size: 14px; font-weight: 700; margin: 0 0 12px 0; font-family: monospace; text-transform: uppercase; letter-spacing: 0.5px;">
+              Indexed Tech Stack (${level || "VERIFIED"} LEVEL)
+            </h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+              ${skillsListHtml}
+            </ul>
+          </div>
+
+          <!-- Explanation -->
+          <div style="margin-bottom: 28px;">
+            <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0;">
+              Our Match Matrix engine runs continuous scans against client demand. Whenever a job matches your skills at a 90%+ confidence score, you will be notified instantly via email and on your Creator Portal.
+            </p>
+          </div>
+
+          <!-- Action Button -->
+          <div style="text-align: left; padding-top: 8px;">
+            <a href="${baseUrl}/client/login" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 14px;">
+              View Creator Portal →
+            </a>
+          </div>
+
+          <!-- Footer -->
+          <div style="margin-top: 32px; padding-top: 16px; border-t: 1px solid #f1f5f9; text-align: center; color: #94a3b8; font-size: 12px; font-family: monospace;">
+            © ${new Date().getFullYear()} Jitume AIMS · Autonomous AI Matchmaking Platform
+          </div>
+        </div>
+      </div>
+    `
+
+    if (process.env.RESEND_API_KEY) {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [creatorEmail],
+        subject,
+        html,
+      })
+      console.log(`[Resend Creator Welcome Sent -> ${creatorEmail}]: ${subject}`)
+      return { success: true }
+    } else {
+      console.log(`[Resend Creator Welcome Mock Dispatch -> ${creatorEmail}]: ${subject}`)
+      return { success: true, mock: true }
+    }
+  } catch (err) {
+    console.error("Failed to send creator welcome email via Resend:", err)
+    return { success: false, error: err }
+  }
+}
+

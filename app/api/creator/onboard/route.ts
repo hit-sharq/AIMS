@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { runTalentProfilerAgent } from "@/lib/agents/talent-profiler"
+import { dispatchCreatorWelcomeEmail } from "@/lib/email-dispatcher"
+import { runReverseMatchScanForCreator } from "@/lib/matchmaker"
 
 export async function POST(req: Request) {
   try {
@@ -61,9 +63,11 @@ export async function POST(req: Request) {
     })
 
     // 4. Map CreatorSkills with AI-assigned weights
+    const indexedSkillNames: string[] = []
     for (const item of aiProfiling.skills) {
       const skillName = item.name
       const weight = item.weight || 85
+      indexedSkillNames.push(skillName)
 
       const skill = await prisma.skill.upsert({
         where: { name: skillName },
@@ -85,11 +89,34 @@ export async function POST(req: Request) {
       })
     }
 
+    // TASK 1: Dispatch Creator Welcome Email (Resend Glassmorphic Template wrapped in try/catch)
+    try {
+      await dispatchCreatorWelcomeEmail({
+        creatorEmail: user.email,
+        creatorName: user.name,
+        skillNames: indexedSkillNames,
+        level: aiProfiling.level,
+      })
+    } catch (emailErr) {
+      console.warn("Creator welcome email dispatch skipped safely:", emailErr)
+    }
+
+    // TASK 2: Trigger Reverse Match Scan against all active/open client jobs
+    let reverseMatches: any[] = []
+    try {
+      reverseMatches = await runReverseMatchScanForCreator(profile.id)
+      console.log(`[Reverse Match Scan]: Scanned active jobs for new creator ${user.name}. Matches found: ${reverseMatches.length}`)
+    } catch (matchErr) {
+      console.warn("Reverse match scan skipped safely:", matchErr)
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Creator profile successfully onboarded via Talent Profiler Agent!",
+      message: `Creator profile successfully onboarded! Welcome email dispatched and reverse match scan completed (${reverseMatches.length} job match(es) populated).`,
       profileId: profile.id,
       aiProfiling,
+      reverseMatchesCount: reverseMatches.length,
+      reverseMatches,
     })
   } catch (err: any) {
     console.error("Creator Onboarding Error:", err)

@@ -160,3 +160,110 @@ JSON Schema:
 
   return createdMatches
 }
+
+export async function runReverseMatchScanForCreator(creatorId: string) {
+  // 1. Fetch Creator Profile and skills
+  const creator = await prisma.creatorProfile.findUnique({
+    where: { id: creatorId },
+    include: {
+      user: true,
+      skills: { include: { skill: true } },
+    },
+  })
+
+  if (!creator) throw new Error(`Creator Profile not found for ID: ${creatorId}`)
+
+  // 2. Query Prisma for all open/active jobs
+  const openJobs = await prisma.job.findMany({
+    where: {
+      status: { in: ["ACTIVE", "MATCHING"] },
+    },
+    include: {
+      skills: { include: { skill: true } },
+      client: true,
+    },
+  })
+
+  if (openJobs.length === 0) return []
+
+  const createdMatches = []
+  const creatorSkillNames = new Set(creator.skills.map((cs: any) => cs.skill.name))
+
+  // 3. Evaluate each open job against this new creator
+  for (const job of openJobs) {
+    const requiredSkillNames = job.skills.map((js: any) => js.skill.name)
+    const matchingSkills = requiredSkillNames.filter((s: string) => creatorSkillNames.has(s))
+
+    const skillMatchRatio = requiredSkillNames.length > 0 ? matchingSkills.length / requiredSkillNames.length : 1
+    const isLevelMatch = creator.level === job.requiredLevel
+
+    let baseScore = skillMatchRatio * 90
+    if (isLevelMatch) baseScore += 8.5
+    else baseScore += 4.0
+
+    const confidenceScore = Math.min(99.5, Math.max(70.0, Number(baseScore.toFixed(1))))
+
+    // Check if match score >= 85%
+    if (confidenceScore >= 85) {
+      const existingMatch = await prisma.match.findFirst({
+        where: { jobId: job.id, creatorId: creator.id },
+      })
+
+      let matchRecord
+      if (!existingMatch) {
+        matchRecord = await prisma.match.create({
+          data: {
+            jobId: job.id,
+            creatorId: creator.id,
+            confidenceScore,
+            rank: 1,
+            aiReasoning: `Reverse Match Scan: Matched ${matchingSkills.length} core skill(s): ${matchingSkills.join(", ")}. Level (${creator.level}) matches job (${job.requiredLevel}).`,
+            status: "ADMIN_APPROVED",
+            approvedAt: new Date(),
+          },
+          include: {
+            creator: { include: { user: true, skills: { include: { skill: true } } } },
+            job: true,
+          },
+        })
+      } else {
+        matchRecord = await prisma.match.update({
+          where: { id: existingMatch.id },
+          data: {
+            confidenceScore,
+            status: "ADMIN_APPROVED",
+            approvedAt: new Date(),
+          },
+          include: {
+            creator: { include: { user: true, skills: { include: { skill: true } } } },
+            job: true,
+          },
+        })
+      }
+
+      createdMatches.push(matchRecord)
+
+      // Dispatch Autonomous Hot Lead Email to Creator if >= 90%
+      if (confidenceScore >= 90) {
+        try {
+          await dispatchAutonomousCreatorHotLeadEmail({
+            creatorEmail: creator.user.email,
+            creatorName: creator.user.name,
+            jobTitle: job.title,
+            budgetMin: job.budgetMin || 500000,
+            budgetMax: job.budgetMax || 2500000,
+            timeline: job.timeline,
+            confidenceScore,
+            aiReasoning: matchRecord.aiReasoning || undefined,
+          })
+          console.log(`[Reverse Matchmaker]: Dispatched hot lead to ${creator.user.email} for job ${job.title} (${confidenceScore}% Match)`)
+        } catch (emailErr) {
+          console.warn("Reverse match hot lead email skipped safely:", emailErr)
+        }
+      }
+    }
+  }
+
+  return createdMatches
+}
+
