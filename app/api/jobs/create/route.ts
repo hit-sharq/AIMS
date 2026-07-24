@@ -34,16 +34,16 @@ export async function POST(req: Request) {
       },
     })
 
-    // 3. Create Job Record (status: ACTIVE)
+    // 3. Create Job Record (status: ACTIVE, KES currency)
     const job = await prisma.job.create({
       data: {
         clientId: clientUser.id,
         title,
         description,
         projectType: projectType || "Full-Stack Web App",
-        budgetMin: budgetMin ? Number(budgetMin) : 10000,
-        budgetMax: budgetMax ? Number(budgetMax) : 30000,
-        budgetCurrency: "USD",
+        budgetMin: budgetMin ? Number(budgetMin) : 500000,
+        budgetMax: budgetMax ? Number(budgetMax) : 2500000,
+        budgetCurrency: "KES",
         timeline: timeline || "6 Weeks",
         requiredLevel: scoperOutput.requiredLevel as any,
         status: "ACTIVE",

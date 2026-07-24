@@ -54,7 +54,7 @@ export default function MatchMatrixAdminWidget({ initialJobs }: { initialJobs: a
 
             <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
               <span className="rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 font-bold text-indigo-700">
-                Budget: ${job.budgetMin?.toLocaleString()} - ${job.budgetMax?.toLocaleString()}
+                Budget: KSh {job.budgetMin?.toLocaleString()} - KSh {job.budgetMax?.toLocaleString()}
               </span>
               <span className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-slate-700">
                 Timeline: {job.timeline}
@@ -98,7 +98,6 @@ export default function MatchMatrixAdminWidget({ initialJobs }: { initialJobs: a
                       }`}
                     >
                       <div>
-                        {/* Properly formatted and separated Rank & Percentage Badges */}
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
                             TOP MATCH

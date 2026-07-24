@@ -161,7 +161,7 @@ export default async function AdminMissionControl() {
               </div>
 
               <div className="mt-4 flex items-center justify-between text-xs font-mono pt-3 border-t border-slate-200/60">
-                <span className="font-bold text-slate-900">${c.hourlyRate || 85}/hr</span>
+                <span className="font-bold text-slate-900">KSh {c.hourlyRate?.toLocaleString() || "2,500"}/hr</span>
                 <span className="text-emerald-600 font-semibold">✓ AI Verified</span>
               </div>
             </div>

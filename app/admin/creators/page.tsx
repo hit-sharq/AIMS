@@ -58,7 +58,7 @@ export default async function AdminTalentNetworkPage() {
             </div>
 
             <div className="mt-4 flex items-center justify-between text-xs font-mono pt-3 border-t border-slate-200/60">
-              <span className="font-bold text-slate-900">${c.hourlyRate || 85}/hr</span>
+              <span className="font-bold text-slate-900">KSh {c.hourlyRate?.toLocaleString() || "2,500"}/hr</span>
               {c.gitHubUrl && (
                 <a href={c.gitHubUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1">
                   GitHub <ExternalLink className="h-3 w-3" />

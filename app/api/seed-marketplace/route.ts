@@ -26,7 +26,7 @@ export async function GET() {
       })
     }
 
-    // 2. Seed Single Happy Path Creator: Sharlmon Musundi
+    // 2. Seed Single Happy Path Creator: Sharlmon Musundi (Localized KES rate: KSh 2,500/hr)
     const creatorUser = await prisma.user.create({
       data: {
         email: "sharlmon19@gmail.com",
@@ -37,7 +37,7 @@ export async function GET() {
             title: "Senior Full-Stack Engineer & AI Architect",
             bio: "Specializing in Next.js, Node.js, Prisma, and Autonomous AI systems. 7+ years building enterprise web applications.",
             level: "SENIOR",
-            hourlyRate: 95,
+            hourlyRate: 2500,
             cvUrl: "https://github.com/sharlmon",
             gitHubUrl: "https://github.com/sharlmon",
             linkedInUrl: "https://linkedin.com/in/sharlmon",
@@ -61,7 +61,7 @@ export async function GET() {
       }
     }
 
-    // 3. Seed Single Happy Path Job: Enterprise E-Commerce Platform
+    // 3. Seed Single Happy Path Job: Enterprise E-Commerce Platform (Localized KES budget: KSh 1,500,000 - 3,500,000)
     const clientUser = await prisma.user.create({
       data: {
         email: "acme.corp@client.com",
@@ -77,9 +77,9 @@ export async function GET() {
         title: "Enterprise E-Commerce Platform & Design System",
         description: "Looking for a senior full-stack creator to build a modern Next.js 14 e-commerce platform with automated payment workflows and a custom glassmorphism design system.",
         projectType: "E-Commerce",
-        budgetMin: 15000,
-        budgetMax: 35000,
-        budgetCurrency: "USD",
+        budgetMin: 1500000,
+        budgetMax: 3500000,
+        budgetCurrency: "KES",
         timeline: "8 Weeks",
         requiredLevel: "SENIOR",
         status: "ACTIVE",
@@ -100,7 +100,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: "Marketplace database successfully seeded with single Happy Path creator and job!",
+      message: "Marketplace database successfully seeded with KES currency localization!",
       jobId: job.id,
       matchesCount: matches.length,
       matches,

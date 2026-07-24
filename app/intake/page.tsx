@@ -232,11 +232,11 @@ export default function ClientIntakePage() {
                 <div className="grid gap-6 sm:grid-cols-3">
                   <div>
                     <label className="block text-xs font-mono font-bold uppercase text-slate-700 mb-2">
-                      Min Budget (USD)
+                      Min Budget (KES)
                     </label>
                     <input
                       type="number"
-                      placeholder="10000"
+                      placeholder="500000"
                       value={form.budgetMin}
                       onChange={(e) => setForm({ ...form, budgetMin: e.target.value })}
                       className="w-full rounded-2xl border border-slate-200/80 bg-white/70 backdrop-blur-md px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition"
@@ -245,11 +245,11 @@ export default function ClientIntakePage() {
 
                   <div>
                     <label className="block text-xs font-mono font-bold uppercase text-slate-700 mb-2">
-                      Max Budget (USD)
+                      Max Budget (KES)
                     </label>
                     <input
                       type="number"
-                      placeholder="30000"
+                      placeholder="2500000"
                       value={form.budgetMax}
                       onChange={(e) => setForm({ ...form, budgetMax: e.target.value })}
                       className="w-full rounded-2xl border border-slate-200/80 bg-white/70 backdrop-blur-md px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition"

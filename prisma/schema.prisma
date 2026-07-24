@@ -142,7 +142,7 @@ model Job {
   projectType    String          // e.g., "E-Commerce", "Mobile App", "AI Integration", "SaaS Platform"
   budgetMin      Float?
   budgetMax      Float?
-  budgetCurrency String          @default("USD")
+  budgetCurrency String          @default("KES")
   timeline       String          // e.g., "4 Weeks", "12 Weeks"
   requiredLevel  ExperienceLevel @default(MID)
   status         JobStatus       @default(ACTIVE)

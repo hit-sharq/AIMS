@@ -80,7 +80,7 @@ export default async function ClientMatchReviewPage({ params }: { params: { matc
                 {creator.level}
               </span>
               <span className="font-mono text-sm font-bold text-slate-900">
-                ${creator.hourlyRate || 95}/hr
+                KSh {creator.hourlyRate?.toLocaleString() || "2,500"}/hr
               </span>
             </div>
           </div>

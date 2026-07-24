@@ -45,7 +45,7 @@ export default async function AdminActiveJobsPage() {
 
               <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
                 <span className="rounded-full bg-white border border-slate-200 px-3 py-1 font-bold text-slate-900">
-                  Budget: ${job.budgetMin?.toLocaleString()} - ${job.budgetMax?.toLocaleString()}
+                  Budget: KSh {job.budgetMin?.toLocaleString()} - KSh {job.budgetMax?.toLocaleString()}
                 </span>
                 <span className="rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-slate-700">
                   {job.timeline}

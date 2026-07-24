@@ -188,11 +188,11 @@ export default function CreatorOnboardingPage() {
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs font-mono font-bold uppercase text-slate-700 mb-2">
-                      Target Hourly Rate (USD)
+                      Target Hourly Rate (KES/hr)
                     </label>
                     <input
                       type="number"
-                      placeholder="e.g. 85"
+                      placeholder="e.g. 2500"
                       value={form.hourlyRate}
                       onChange={(e) => setForm({ ...form, hourlyRate: e.target.value })}
                       className="w-full rounded-2xl border border-slate-200/80 bg-white/70 backdrop-blur-md px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition"
