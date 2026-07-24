@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { PageHead, PageWrap } from "@/components/app/Page"
-import { Sparkles, ArrowRight, CheckCircle2, Cpu, Building2, FileCode, DollarSign, Layers } from "lucide-react"
+import { Sparkles, ArrowRight, CheckCircle2, Cpu, Building2, FileCode, DollarSign, Mic, MicOff, Accessibility, Eye, Layers, Type, X } from "lucide-react"
 
 export default function ClientIntakePage() {
   const router = useRouter()
@@ -13,16 +13,82 @@ export default function ClientIntakePage() {
     title: "",
     projectType: "E-Commerce",
     description: "",
-    budgetMin: "10000",
-    budgetMax: "30000",
+    budgetMin: "500000",
+    budgetMax: "2500000",
     timeline: "8 Weeks",
     requiredLevel: "SENIOR",
     skills: "React, Node.js, TypeScript, UI/UX, PostgreSQL",
   })
 
+  // Accessibility Accommodations State
+  const [showA11yModal, setShowA11yModal] = useState(false)
+  const [highContrast, setHighContrast] = useState(false)
+  const [dyslexicFont, setDyslexicFont] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+  const [focusStep, setFocusStep] = useState(1)
+
+  // Web Speech API State
+  const [isListening, setIsListening] = useState(false)
+  const [speechSupported, setSpeechSupported] = useState(true)
+  const recognitionRef = useRef<any>(null)
+
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      if (SpeechRecognition) {
+        const rec = new SpeechRecognition()
+        rec.continuous = true
+        rec.interimResults = true
+        rec.lang = "en-US"
+
+        rec.onresult = (event: any) => {
+          let transcript = ""
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript
+          }
+          if (transcript.trim()) {
+            setForm((prev) => ({
+              ...prev,
+              description: prev.description ? `${prev.description} ${transcript}` : transcript,
+            }))
+          }
+        }
+
+        rec.onerror = (event: any) => {
+          console.warn("Speech recognition error:", event.error)
+          setIsListening(false)
+        }
+
+        rec.onend = () => {
+          setIsListening(false)
+        }
+
+        recognitionRef.current = rec
+      } else {
+        setSpeechSupported(false)
+      }
+    }
+  }, [])
+
+  const toggleVoiceRecording = () => {
+    if (!recognitionRef.current) return
+
+    if (isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    } else {
+      try {
+        recognitionRef.current.start()
+        setIsListening(true)
+      } catch (err) {
+        console.error("Speech start error:", err)
+      }
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,6 +103,11 @@ export default function ClientIntakePage() {
 
     try {
       const skillsArray = form.skills.split(",").map((s) => s.trim()).filter(Boolean)
+      const a11yNeeds: string[] = []
+      if (highContrast) a11yNeeds.push("HIGH_CONTRAST")
+      if (dyslexicFont) a11yNeeds.push("DYSLEXIA_FONT")
+      if (isListening) a11yNeeds.push("VOICE_INPUT")
+      if (focusMode) a11yNeeds.push("SIMPLIFIED_STEPPER")
 
       const res = await fetch("/api/jobs/create", {
         method: "POST",
@@ -44,6 +115,7 @@ export default function ClientIntakePage() {
         body: JSON.stringify({
           ...form,
           skills: skillsArray,
+          accessibilityNeeds: a11yNeeds,
         }),
       })
 
@@ -58,14 +130,128 @@ export default function ClientIntakePage() {
     }
   }
 
+  // Adaptive Container Styling
+  const containerClass = `max-w-5xl mx-auto py-10 px-4 sm:px-6 transition-all duration-300 ${
+    highContrast
+      ? "bg-slate-950 text-amber-300 border-4 border-amber-400 font-bold rounded-3xl p-6"
+      : ""
+  } ${dyslexicFont ? "font-sans tracking-wide leading-loose" : ""}`
+
   return (
     <PageWrap>
-      <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6">
+      <div className={containerClass}>
+        {/* Top-Corner Accessibility Accommodations Bar */}
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/60">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold text-indigo-600 uppercase tracking-wider">
+            <span>10-Second Micro-Intake · Client Portal</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowA11yModal(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-4 py-2 text-xs font-mono font-bold hover:bg-indigo-600 transition shadow-sm"
+          >
+            <Accessibility className="h-4 w-4 text-emerald-400" />
+            <span>♿ Accessibility Options</span>
+          </button>
+        </div>
+
         <PageHead
-          eyebrow="10-Second Micro-Intake · Client Portal"
+          eyebrow="Adaptive Client Intake"
           title="Post Project Requirements"
           desc="The Jitume AIMS AI Matchmaker acts as a blind middleman. Post your project deliverables and budget—our comparison algorithm matches you with verified top creators."
         />
+
+        {/* Accessibility Options Modal */}
+        {showA11yModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <Accessibility className="h-5 w-5 text-indigo-600" />
+                  <h3 className="font-bold text-slate-900 text-base">Adaptive Interface & Accommodations</h3>
+                </div>
+                <button onClick={() => setShowA11yModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Voice Assist Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <Mic className="h-5 w-5 text-indigo-600" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Hands-Free Voice Assistant</p>
+                      <p className="text-[11px] text-slate-500">Dictate project requirements directly into fields</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    {speechSupported ? "Ready" : "Browser Unsupported"}
+                  </span>
+                </div>
+
+                {/* High Contrast Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <Eye className="h-5 w-5 text-amber-500" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">High Contrast & Large Controls</p>
+                      <p className="text-[11px] text-slate-500">Black background & vivid controls</p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={highContrast}
+                    onChange={(e) => setHighContrast(e.target.checked)}
+                    className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Dyslexia Typography Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <Type className="h-5 w-5 text-indigo-600" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Enhanced Spacing Typography</p>
+                      <p className="text-[11px] text-slate-500">Increased line-height & letter spacing</p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={dyslexicFont}
+                    onChange={(e) => setDyslexicFont(e.target.checked)}
+                    className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Simplified Focus Mode Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <Layers className="h-5 w-5 text-indigo-600" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Simplified Focus Stepper Mode</p>
+                      <p className="text-[11px] text-slate-500">Step-by-step single question wizard</p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={focusMode}
+                    onChange={(e) => setFocusMode(e.target.checked)}
+                    className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowA11yModal(false)}
+                className="w-full btn btn-signal py-3 font-mono text-xs uppercase"
+              >
+                Apply Accommodations
+              </button>
+            </div>
+          </div>
+        )}
 
         {result ? (
           <div className="glass-panel p-8 sm:p-12 text-center animate-in fade-in max-w-3xl mx-auto mt-8">
@@ -83,7 +269,7 @@ export default function ClientIntakePage() {
             </h3>
 
             <p className="mt-2 text-base text-slate-700 max-w-lg mx-auto font-sans leading-relaxed">
-              AI is currently scanning for the perfect creator for <strong className="text-slate-950">&quot;{result.job?.title}&quot;</strong>.
+              AI is currently scanning for the perfect creator for <strong className="text-slate-950">&quot;{result.job?.title || form.title}&quot;</strong>.
             </p>
 
             {result.matches && result.matches.length > 0 && (
@@ -127,7 +313,7 @@ export default function ClientIntakePage() {
             )}
 
             {/* Section 1: Client Details */}
-            <div className="glass-panel p-8 backdrop-blur-2xl">
+            <div className={`glass-panel p-8 backdrop-blur-2xl ${highContrast ? "bg-black border-amber-400 text-amber-300" : ""}`}>
               <div className="flex items-center gap-2 mb-6 pb-3 border-b border-slate-200/80">
                 <Building2 className="h-5 w-5 text-indigo-600" />
                 <h3 className="text-base font-bold text-slate-900">Section 1: Client Details</h3>
@@ -165,7 +351,7 @@ export default function ClientIntakePage() {
             </div>
 
             {/* Section 2: Project Scope */}
-            <div className="glass-panel p-8 backdrop-blur-2xl">
+            <div className={`glass-panel p-8 backdrop-blur-2xl ${highContrast ? "bg-black border-amber-400 text-amber-300" : ""}`}>
               <div className="flex items-center gap-2 mb-6 pb-3 border-b border-slate-200/80">
                 <FileCode className="h-5 w-5 text-indigo-600" />
                 <h3 className="text-base font-bold text-slate-900">Section 2: Project Scope</h3>
@@ -205,14 +391,43 @@ export default function ClientIntakePage() {
                   </div>
                 </div>
 
+                {/* Voice-to-Text Input Area */}
                 <div>
-                  <label className="block text-xs font-mono font-bold uppercase text-slate-700 mb-2">
-                    Detailed Scope & Key Deliverables <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-xs font-mono font-bold uppercase text-slate-700">
+                      Detailed Scope & Key Deliverables <span className="text-rose-500">*</span>
+                    </label>
+
+                    {/* Microphone Voice Assistant Trigger */}
+                    {speechSupported && (
+                      <button
+                        type="button"
+                        onClick={toggleVoiceRecording}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-bold transition shadow-sm ${
+                          isListening
+                            ? "bg-rose-600 text-white animate-pulse"
+                            : "bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                        }`}
+                      >
+                        {isListening ? (
+                          <>
+                            <Mic className="h-3.5 w-3.5 animate-bounce" />
+                            <span>🎙️ Listening... Speak Now</span>
+                          </>
+                        ) : (
+                          <>
+                            <Mic className="h-3.5 w-3.5 text-indigo-600" />
+                            <span>Voice Assistant Intake</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
                   <textarea
                     rows={4}
                     required
-                    placeholder="Describe project goals, required tech stack, key features, and milestones..."
+                    placeholder="Describe project goals, required tech stack, key features, and milestones... (Click Voice Assistant to dictate hands-free)"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     className="w-full rounded-2xl border border-slate-200/80 bg-white/70 backdrop-blur-md px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-indigo-600 focus:bg-white focus:ring-4 focus:ring-indigo-100 transition"
@@ -222,7 +437,7 @@ export default function ClientIntakePage() {
             </div>
 
             {/* Section 3: Budget & Timeline */}
-            <div className="glass-panel p-8 backdrop-blur-2xl">
+            <div className={`glass-panel p-8 backdrop-blur-2xl ${highContrast ? "bg-black border-amber-400 text-amber-300" : ""}`}>
               <div className="flex items-center gap-2 mb-6 pb-3 border-b border-slate-200/80">
                 <DollarSign className="h-5 w-5 text-indigo-600" />
                 <h3 className="text-base font-bold text-slate-900">Section 3: Budget & Timeline</h3>
