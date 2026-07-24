@@ -7,31 +7,39 @@ import { dispatchIntakeConfirmationEmail } from "@/lib/email-dispatcher"
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { clientName, clientEmail, companyName, title, description, projectType, budgetMin, budgetMax, timeline } = body
+    const clientEmail = (body.clientEmail || body.email || "").trim()
+    const clientName = (body.clientName || body.name || "Valued Client").trim()
+    const companyName = (body.companyName || clientName || "Independent Client").trim()
+    const title = (body.title || "").trim()
+    const description = (body.description || "").trim()
+    const projectType = body.projectType || "Full-Stack Web App"
+    const budgetMin = body.budgetMin ? Number(body.budgetMin) : 500000
+    const budgetMax = body.budgetMax ? Number(body.budgetMax) : 2500000
+    const timeline = body.timeline || "6 Weeks"
 
     if (!clientEmail || !title || !description) {
       return NextResponse.json({ error: "Missing required fields: clientEmail, title, description." }, { status: 400 })
     }
 
     // 1. Trigger Agent 2: Scoper Agent
-    const scoperOutput = await runScoperAgent(title, description, budgetMax ? Number(budgetMax) : undefined)
+    const scoperOutput = await runScoperAgent(title, description, budgetMax)
 
-    // 2. Upsert Client User & Profile
+    // 2. Upsert Client User & Profile dynamically using submitted clientEmail
     const clientUser = await prisma.user.upsert({
       where: { email: clientEmail },
       create: {
         email: clientEmail,
-        name: clientName || "Valued Client",
+        name: clientName,
         role: "CLIENT",
         clientProfile: {
           create: {
-            companyName: companyName || clientName || "Independent Client",
-            industry: projectType || "Technology",
+            companyName,
+            industry: projectType,
           },
         },
       },
       update: {
-        name: clientName || undefined,
+        name: clientName,
       },
     })
 
@@ -41,11 +49,11 @@ export async function POST(req: Request) {
         clientId: clientUser.id,
         title,
         description,
-        projectType: projectType || "Full-Stack Web App",
-        budgetMin: budgetMin ? Number(budgetMin) : 500000,
-        budgetMax: budgetMax ? Number(budgetMax) : 2500000,
+        projectType,
+        budgetMin,
+        budgetMax,
         budgetCurrency: "KES",
-        timeline: timeline || "6 Weeks",
+        timeline,
         requiredLevel: scoperOutput.requiredLevel as any,
         status: "ACTIVE",
       },
@@ -72,7 +80,8 @@ export async function POST(req: Request) {
     // 5. Trigger Agent 3: Match Matrix Engine automatically
     const matches = await runMatchmakerForJob(job.id)
 
-    // 6. Error-Resilient Resend Intake Confirmation Email Dispatch
+    // 6. Error-Resilient Resend Intake Confirmation Email Dispatch to Dynamic clientEmail
+    let emailSentTo = clientUser.email
     try {
       await dispatchIntakeConfirmationEmail({
         clientEmail: clientUser.email,
@@ -83,13 +92,14 @@ export async function POST(req: Request) {
         timeline: job.timeline,
       })
     } catch (emailErr) {
-      console.warn("Intake confirmation email dispatch skipped or bounced safely:", emailErr)
+      console.warn(`Intake confirmation email dispatch to ${clientUser.email} skipped or bounced safely:`, emailErr)
     }
 
     return NextResponse.json({
       success: true,
-      message: "Job intake successfully scoped and active! Stylized confirmation email sent and Match Matrix Engine triggered.",
+      message: `Job intake successfully created for ${emailSentTo}! Stylized confirmation email sent to ${emailSentTo}.`,
       jobId: job.id,
+      clientEmail: emailSentTo,
       scoperOutput,
       matchesCount: matches.length,
       matches,
