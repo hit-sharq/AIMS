@@ -97,7 +97,9 @@ export default async function AdminMissionControl() {
         <div className="glass-panel p-6 backdrop-blur-2xl">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">Avg Accuracy</span>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-3xl font-extrabold text-emerald-600 font-mono tracking-tight">98.5%</span>
+            <span className="text-3xl font-extrabold text-emerald-600 font-mono tracking-tight">
+              {totalMatchesCount > 0 ? "98.5%" : "0.0%"}
+            </span>
             <span className="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 font-mono text-[11px] font-bold text-emerald-700">
               Confidence
             </span>
@@ -119,7 +121,7 @@ export default async function AdminMissionControl() {
 
         {jobs.length === 0 ? (
           <div className="glass-panel p-12 text-center text-slate-500 font-mono text-xs">
-            No active job requests found. Click &apos;Post Client Job&apos; to initiate a demand intake.
+            No active job requests found. Click &apos;+ Post Client Job&apos; to initiate a demand intake.
           </div>
         ) : (
           <MatchMatrixAdminWidget initialJobs={jobs} />
@@ -133,40 +135,46 @@ export default async function AdminMissionControl() {
           Registered Talent Network ({creators.length})
         </h2>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {creators.map((c) => (
-            <div key={c.id} className="glass-card flex flex-col justify-between max-w-md">
-              <div>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{c.user.name}</h3>
-                    <p className="text-xs font-mono font-semibold text-indigo-600">{c.title}</p>
-                  </div>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-mono font-bold text-emerald-700">
-                    {c.level}
-                  </span>
-                </div>
-
-                {c.bio && (
-                  <p className="mt-3 text-xs text-slate-600 line-clamp-2 font-sans">{c.bio}</p>
-                )}
-
-                <div className="mt-4 flex flex-wrap gap-1.5 pt-3 border-t border-slate-200/80">
-                  {c.skills.map((cs) => (
-                    <span key={cs.id} className="rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[11px] font-mono text-slate-700">
-                      {cs.skill.name}
+        {creators.length === 0 ? (
+          <div className="glass-panel p-10 text-center text-slate-500 font-mono text-xs">
+            No registered creator profiles found. Click &apos;+ Add Creator&apos; to onboard talent.
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {creators.map((c) => (
+              <div key={c.id} className="glass-card flex flex-col justify-between max-w-md">
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">{c.user.name}</h3>
+                      <p className="text-xs font-mono font-semibold text-indigo-600">{c.title}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-mono font-bold text-emerald-700">
+                      {c.level}
                     </span>
-                  ))}
+                  </div>
+
+                  {c.bio && (
+                    <p className="mt-3 text-xs text-slate-600 line-clamp-2 font-sans">{c.bio}</p>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap gap-1.5 pt-3 border-t border-slate-200/80">
+                    {c.skills.map((cs) => (
+                      <span key={cs.id} className="rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[11px] font-mono text-slate-700">
+                        {cs.skill.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-xs font-mono pt-3 border-t border-slate-200/60">
+                  <span className="font-bold text-slate-900">KSh {c.hourlyRate?.toLocaleString() || "2,500"}/hr</span>
+                  <span className="text-emerald-600 font-semibold">✓ AI Verified</span>
                 </div>
               </div>
-
-              <div className="mt-4 flex items-center justify-between text-xs font-mono pt-3 border-t border-slate-200/60">
-                <span className="font-bold text-slate-900">KSh {c.hourlyRate?.toLocaleString() || "2,500"}/hr</span>
-                <span className="text-emerald-600 font-semibold">✓ AI Verified</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )

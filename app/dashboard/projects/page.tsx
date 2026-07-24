@@ -54,10 +54,10 @@ export default async function CreatorMatchedJobsPage() {
               )}
             </div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {creator ? creator.user.name : "Sharlmon Musundi"}
+              {creator ? creator.user.name : "Talent Network Member"}
             </h1>
             <p className="text-sm font-mono text-indigo-600 font-semibold mt-0.5">
-              {creator ? creator.title : "Senior Full-Stack Engineer & AI Architect"}
+              {creator ? creator.title : "Verified Creator Profile"}
             </p>
           </div>
 
@@ -87,9 +87,9 @@ export default async function CreatorMatchedJobsPage() {
 
           {!creator || creator.matches.length === 0 ? (
             <div className="glass-panel p-10 text-center text-slate-500">
-              <p className="text-lg font-bold text-slate-900">No matched jobs pending</p>
+              <p className="text-lg font-bold text-slate-900">No active jobs found</p>
               <p className="text-xs font-mono text-slate-600 mt-1">
-                The AI Matchmaker runs comparison scripts continuously whenever a client submits a 10-Second Micro-Intake.
+                Waiting for client intakes. The AI Matchmaker runs comparison scripts continuously whenever a client submits a 10-Second Micro-Intake.
               </p>
             </div>
           ) : (
