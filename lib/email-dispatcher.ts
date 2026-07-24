@@ -15,6 +15,7 @@ export async function dispatchMatchApprovedEmails(params: {
   matchId: string
 }) {
   const { creatorEmail, creatorName, clientEmail, clientName, jobTitle, confidenceScore, jobId, matchId } = params
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
   const results = { creatorEmailSent: false, clientEmailSent: false }
 
@@ -34,7 +35,7 @@ export async function dispatchMatchApprovedEmails(params: {
         <p style="color: #334155; font-size: 14px;">
           Log in to your Creator Portal to review the scope and accept the contract.
         </p>
-        <a href="http://localhost:3000/dashboard/projects" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: bold; font-size: 14px; margin-top: 12px;">
+        <a href="${baseUrl}/dashboard/projects" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: bold; font-size: 14px; margin-top: 12px;">
           View Matched Job & Accept Contract →
         </a>
       </div>
@@ -56,7 +57,7 @@ export async function dispatchMatchApprovedEmails(params: {
     console.error("Failed to send creator email via Resend:", err)
   }
 
-  // 2. Send Email to Client
+  // 2. Send Email to Client (DIRECT MATCH VIEW ROUTE)
   try {
     const clientSubject = `🎯 Developer Match Confirmed: ${confidenceScore}% AI Match`
     const clientHtml = `
@@ -73,7 +74,7 @@ export async function dispatchMatchApprovedEmails(params: {
         <p style="color: #334155; font-size: 14px;">
           Review the developer profile and AI match rationale to initiate project kickoff.
         </p>
-        <a href="http://localhost:3000/client/match/${matchId}" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: bold; font-size: 14px; margin-top: 12px;">
+        <a href="${baseUrl}/client/match/${matchId}" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: bold; font-size: 14px; margin-top: 12px;">
           Review Developer Profile →
         </a>
       </div>
