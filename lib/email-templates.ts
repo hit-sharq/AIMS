@@ -200,3 +200,15 @@ export function buildWorkflowCompleteEmail(params: {
   `
   return { subject: title, html: wrap(title, body) }
 }
+
+// Aliases for auto-workflow and approval modules
+export const callScheduledEmail = (params: any) => buildContactReportEmail({ clientName: params.clientName || "Client", projectName: params.projectName, summary: params.date || "Call scheduled", publicUrl: params.roomUrl })
+export const contactReportReadyEmail = buildContactReportEmail
+export const proposalReadyEmail = buildProposalReadyEmail
+export const quoteReadyEmail = buildQuoteReadyEmail
+export const proposalApprovedEmail = (params: any) => buildProposalReadyEmail({ clientName: params.clientName || "Client", projectName: params.projectName, proposalUrl: params.proposalUrl || "#" })
+export const quoteApprovedEmail = (params: any) => buildQuoteReadyEmail({ clientName: params.clientName || "Client", projectName: params.projectName, quoteUrl: params.quoteUrl || "#" })
+export const adminProjectApprovedEmail = (params: any) => buildWorkflowCompleteEmail({ clientName: params.clientName || "Admin", projectName: params.projectName, projectUrl: params.projectUrl || "#" })
+export const meetingCompletedEmail = (params: any) => buildContactReportEmail({ clientName: params.clientName || "Client", projectName: params.projectName, summary: params.summary || "Meeting completed" })
+export const projectApprovedClientEmail = (params: any) => buildWorkflowCompleteEmail({ clientName: params.clientName || "Client", projectName: params.projectName, projectUrl: params.projectUrl || "#" })
+

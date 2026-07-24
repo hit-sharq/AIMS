@@ -39,7 +39,7 @@ Timeline target: 3 weeks. Budget: Pending formal quotation.`;
     }
 
     const discoveryNotes =
-      project.discoveryNotes || "Client discovery meeting completed with initial requirements.";
+      (project as any).discoveryNotes || "Client discovery meeting completed with initial requirements.";
 
     // 1. Attach transcript to Project and advance stage to 'understanding'
     const updatedProject = await prisma.project.update({

@@ -13,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: "roomName is required." }, { status: 400 });
     }
 
-    const project = await prisma.project.findUnique({
+    const project = await prisma.project.findFirst({
       where: { roomName },
       select: { id: true, clientName: true, clientEmail: true, name: true, roomName: true, stage: true },
     });

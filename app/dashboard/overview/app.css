@@ -1,98 +1,114 @@
-.ov-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
-  margin-bottom: 32px;
-  border-top: 2px solid var(--ink);
-  border-left: 2px solid var(--ink);
+.jitume-dashboard {
+  padding-bottom: 64px;
 }
-.ov-stat {
-  padding: 20px 24px;
-  background: var(--bg);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  transition: background 0.2s ease;
+
+.jitume-welcome {
+  max-width: 780px;
 }
-.ov-stat:hover { background: var(--surface-2); }
-.ov-stat-value {
+
+.jitume-headline {
+  font-family: var(--font-sans);
+  font-size: clamp(2.4rem, 4.5vw, 3.8rem);
+  font-weight: 800;
+  line-height: 1.08;
+  color: #0f172a;
+  letter-spacing: -0.035em;
+  margin: 12px 0 14px;
+}
+
+.jitume-sub {
+  font-size: 1.08rem;
+  color: #334155;
+  line-height: 1.6;
+}
+
+/* 7-Stage Glassmorphism 3.0 Workflow Cards */
+.wf-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 24px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 210px;
+  transition: all var(--tr);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  position: relative;
+}
+
+.wf-card:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(79, 70, 229, 0.35);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px -8px rgba(79, 70, 229, 0.15);
+}
+
+.wf-card-active {
+  border: 2px solid #4f46e5 !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 12px 32px rgba(79, 70, 229, 0.18) !important;
+}
+
+.wf-card-num {
   font-family: var(--font-mono);
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--ink);
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #4f46e5;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
 }
-.ov-stat-label {
+
+.wf-card-title {
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+  margin-top: 10px;
+}
+
+.wf-card-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.wf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--ink-3);
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 6px;
 }
 
-.ov-grid { display: grid; grid-template-columns: 1fr 380px; gap: 0; align-items: start; }
-.ov-main { border-right: 1px solid var(--line); }
-.ov-side { padding-left: 28px; }
-
-.section-title {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink-3);
-  font-weight: 400;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
+.wf-badge-complete {
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.25);
 }
 
-.ov-card {
-  display: block; padding: 16px 18px; background: var(--bg);
-  border: 1px solid var(--line);
-  transition: all var(--tr);
+.wf-badge-active {
+  background: rgba(79, 70, 229, 0.1);
+  color: #4f46e5;
+  border: 1px solid rgba(79, 70, 229, 0.25);
 }
-.ov-card:hover { border-color: var(--line-strong); background: var(--surface-2); }
-.ov-card-title { font-weight: 600; color: var(--ink); font-size: 0.95rem; }
 
-.ov-approve {
-  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
-  background: var(--bg); border: 1px solid var(--line);
-  transition: all var(--tr);
+.wf-badge-queue {
+  background: rgba(15, 23, 42, 0.06);
+  color: #334155;
+  border: 1px solid rgba(203, 213, 225, 0.8);
 }
-.ov-approve:hover { border-color: var(--signal); background: var(--surface-2); }
 
-.ov-row {
-  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
-  transition: background var(--tr);
-}
-.ov-row:hover { background: var(--surface-2); }
-
-.qa-btn {
-  display: flex; align-items: center; gap: 12px; padding: 11px 14px;
-  border: 1px solid var(--line); background: var(--surface-2);
-  font-family: var(--font-mono);
-  font-size: 0.78rem; font-weight: 500; color: var(--ink-2); transition: all var(--tr);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-.qa-btn span { color: var(--signal); font-size: 1rem; }
-.qa-btn:hover { border-color: var(--signal); color: var(--ink); background: var(--signal-soft); }
-
-.hai-box { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
-.hai-div { height: 1px; background: var(--line); }
-
-@media (max-width: 980px) {
-  .ov-grid { grid-template-columns: 1fr; }
-  .ov-main { border-right: none; }
-  .ov-side { padding-left: 0; margin-top: 28px; }
-  .ov-stats { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 600px) { .ov-stats { grid-template-columns: 1fr; } }
-@media (max-width: 520px) {
-  .ov-stats { grid-template-columns: 1fr; }
-  .ov-stat { padding: 16px 18px; }
-  .ov-card { padding: 14px 14px; }
-  .ov-approve { padding: 12px 14px; }
-  .hai-box { padding: 14px; }
+.wf-badge-pending {
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.25);
 }

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     // Default action: archive
     await prisma.project.update({
       where: { id: proposal.projectId },
-      data: { status: "archived" },
+      data: { status: "paused" as any },
     });
 
     return NextResponse.json({ success: true, message: "Proposal moved to archived state." });

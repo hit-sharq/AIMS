@@ -118,18 +118,43 @@ Return ONLY brief summary HTML.`;
 
     // 4. Immediately Execute Resend Email Dispatches (Zero-Touch)
     if (process.env.RESEND_API_KEY) {
-      // Email to Client: Contact Report Confirmation
-      await resend.emails.send({
-        from: defaultFromEmail,
-        to: [project.clientEmail || "client@example.com"],
-        subject: `Executive Contact Report · ${project.name}`,
-        html: `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:30px;background:#FAF0F8;">
+      const targetClientEmail = project.clientEmail || "client@example.com";
+      const clientEmailHtml = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:30px;background:#FAF0F8;">
 <div style="max-width:600px;background:#fff;padding:30px;border:1px solid #e4e4e7;">
   <p style="color:#2563eb;font-weight:bold;text-transform:uppercase;font-size:11px;">Client Contact Report</p>
   <h1>${project.name}</h1>
   ${summaryHtml}
-</div></body></html>`,
-      }).catch((e) => console.warn("Resend client email failed:", e));
+</div></body></html>`;
+
+      // Email to Client: Contact Report Confirmation
+      let clientSendResult = await resend.emails.send({
+        from: defaultFromEmail,
+        to: [targetClientEmail],
+        subject: `Executive Contact Report · ${project.name}`,
+        html: clientEmailHtml,
+      }).catch((e) => {
+        console.warn("Resend client email failed with defaultFromEmail, retrying with onboarding@resend.dev...", e);
+        return null;
+      });
+
+      if (!clientSendResult || clientSendResult.error) {
+        const fallbackResult = await resend.emails.send({
+          from: "onboarding@resend.dev",
+          to: [targetClientEmail],
+          subject: `Executive Contact Report · ${project.name}`,
+          html: clientEmailHtml,
+        }).catch(() => null);
+
+        if (fallbackResult?.error?.message?.includes("only send testing emails to your own email address")) {
+          console.warn(`Resend Sandbox restriction: Cannot send to unverified email ${targetClientEmail}. Retrying to owner: sharlmon19@gmail.com`);
+          await resend.emails.send({
+            from: "onboarding@resend.dev",
+            to: ["sharlmon19@gmail.com"],
+            subject: `[SANDBOX DISPATCH FOR: ${targetClientEmail}] Executive Contact Report · ${project.name}`,
+            html: clientEmailHtml,
+          }).catch((e) => console.warn("Resend sandbox fallback failed:", e));
+        }
+      }
 
       // Email to Internal Team: Contact Report + Google Calendar Invite
       await resend.emails.send({
@@ -146,7 +171,15 @@ Return ONLY brief summary HTML.`;
   <h2>Synthesized Contact Report</h2>
   ${summaryHtml}
 </div></body></html>`,
-      }).catch((e) => console.warn("Resend team email failed:", e));
+      }).catch(async (e) => {
+        console.warn("Resend team email failed, trying onboarding@resend.dev fallback...", e);
+        await resend.emails.send({
+          from: "onboarding@resend.dev",
+          to: internalEmails,
+          subject: `[Internal Production] Contact Report & Sync Scheduled · ${project.clientName}`,
+          html: summaryHtml,
+        }).catch((err) => console.warn("Resend team email fallback failed:", err));
+      });
     }
 
     // 5. Update Project Stage in Prisma DB to 'internal_sync'

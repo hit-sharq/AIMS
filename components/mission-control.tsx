@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Circle, Archive, RotateCcw, Trash2, Check, FileText } from "lucide-react";
+import { CheckCircle2, Circle, Archive, RotateCcw, Trash2, Check, ExternalLink, Sparkles } from "lucide-react";
 import { JoinMeetingButton } from "@/components/JoinMeetingButton";
 import { ProposalSlideOver } from "@/components/proposal-slide-over";
 
@@ -101,17 +101,10 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
     fetchError ? { message: fetchError, type: "error" } : null
   );
 
-  const activeProposal =
-    items.find((item) => item.id === activeProposalId) || items[0] || null;
-  const currentStepIndex = getStepIndex(activeProposal);
-  const isAllPhasesCompleted = currentStepIndex === 4;
-
   const activeQueue = items.filter(
-    (item) => item.projectStatus !== "archived" && item.status !== "dispatched"
+    (item) => item.status !== "dispatched" && item.projectStatus !== "archived"
   );
-  const deliveredQueue = items.filter(
-    (item) => item.projectStatus !== "archived" && item.status === "dispatched"
-  );
+  const deliveredQueue = items.filter((item) => item.status === "dispatched");
   const archivedQueue = items.filter((item) => item.projectStatus === "archived");
 
   const displayedItems =
@@ -121,41 +114,46 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
       ? deliveredQueue
       : archivedQueue;
 
-  async function dispatch(id: string) {
-    setSending(id);
+  const activeProposal = items.find((item) => item.id === activeProposalId) || items[0] || null;
+  const currentStepIndex = getStepIndex(activeProposal);
+  const isAllPhasesCompleted = currentStepIndex === 4;
+
+  async function dispatch(proposalId: string) {
+    setSending(proposalId);
     setNotice(null);
+
     try {
       const response = await fetch("/api/proposals/dispatch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proposalId: id }),
+        body: JSON.stringify({ proposalId }),
       });
-      const result = await response.json();
 
-      if (response.ok) {
-        setItems((current) =>
-          current.map((item) =>
-            item.id === id ? { ...item, status: "dispatched", stage: "delivered" } : item
-          )
-        );
-        if (selectedProposal?.id === id) {
-          setSelectedProposal((current) =>
-            current ? { ...current, status: "dispatched", stage: "delivered" } : null
-          );
-        }
+      const payload = await response.json();
+
+      if (!response.ok) {
         setNotice({
-          message: "Proposal successfully dispatched to client.",
-          type: "success",
-        });
-      } else {
-        setNotice({
-          message: result.error || "Dispatch failed.",
+          message: payload.error || "Proposal dispatch failed.",
           type: "error",
         });
+        return;
       }
+
+      setItems((current) =>
+        current.map((item) =>
+          item.id === proposalId
+            ? { ...item, status: "dispatched", dispatchedAt: new Date().toISOString() }
+            : item
+        )
+      );
+
+      setNotice({
+        message: "Proposal successfully dispatched to client inbox!",
+        type: "success",
+      });
     } catch (err) {
       setNotice({
-        message: "Network error occurred while dispatching proposal email.",
+        message: "Network request failed while dispatching proposal.",
         type: "error",
       });
     } finally {
@@ -164,18 +162,19 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
   }
 
   async function handleArchive(id: string, action: "archive" | "restore" | "delete") {
-    setNotice(null);
     try {
       const response = await fetch("/api/proposals/archive", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ proposalId: id, action }),
       });
+
       const result = await response.json();
 
       if (response.ok) {
         if (action === "delete") {
           setItems((current) => current.filter((item) => item.id !== id));
+          if (activeProposalId === id) setActiveProposalId(null);
           setNotice({ message: "Proposal deleted permanently.", type: "success" });
         } else if (action === "restore") {
           setItems((current) =>
@@ -197,13 +196,17 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAFAF8] px-6 py-8 text-zinc-950 md:px-14 md:py-12 font-sans">
-      <header className="flex flex-col gap-6 border-b border-zinc-200 pb-8 sm:flex-row sm:items-start sm:justify-between">
+    <main className="min-h-screen bg-[#f8fafc] px-6 py-8 text-slate-900 md:px-14 md:py-12 font-sans relative overflow-hidden">
+      {/* Soft Ambient Background Light */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[450px] w-[900px] bg-indigo-200/50 blur-[90px]" />
+
+      <header className="relative z-10 flex flex-col gap-6 border-b border-slate-200 pb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="mb-3 text-xs font-mono font-bold uppercase tracking-[0.22em] text-zinc-950">
-            Jitume Agency OS · Stealth Pipeline
-          </p>
-          <h1 className="font-serif text-4xl tracking-tight sm:text-5xl md:text-6xl text-zinc-950">
+          <span className="eyebrow mb-3 inline-flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+            Synthos Agency OS · Stealth Pipeline
+          </span>
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-slate-900">
             Mission Control
           </h1>
         </div>
@@ -212,13 +215,13 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
         </div>
       </header>
 
-      {/* Subtle Stealth Error/Notice Banner */}
+      {/* Notice Banner */}
       {notice && (
         <div
-          className={`mt-6 flex items-center justify-between border p-4 text-xs font-mono rounded-2xl transition-all ${
+          className={`relative z-10 mt-6 flex items-center justify-between border p-4 text-xs font-mono rounded-2xl backdrop-blur-xl transition-all ${
             notice.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-              : "border-rose-200 bg-rose-50 text-rose-900"
+              ? "border-emerald-200 bg-emerald-50/90 text-emerald-900"
+              : "border-rose-200 bg-rose-50/90 text-rose-900"
           }`}
         >
           <span>{notice.message}</span>
@@ -231,42 +234,42 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
         </div>
       )}
 
-      <section className="grid gap-12 py-10 lg:grid-cols-[1.6fr_0.8fr]">
+      <section className="relative z-10 grid gap-12 py-10 lg:grid-cols-[1.6fr_0.8fr]">
         <div>
-          {/* Header & Tab Filter Row */}
+          {/* Header & Glass Filter Tabs */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-mono font-bold uppercase tracking-wider text-zinc-950">
-              Client decisions queue
+            <h2 className="text-sm font-mono font-bold uppercase tracking-widest text-slate-800">
+              Client Decisions Queue
             </h2>
 
-            {/* Minimalist Filter Tabs */}
-            <div className="flex items-center gap-1.5 rounded-full bg-zinc-200/70 p-1 text-xs font-mono text-zinc-700">
+            {/* White Glass Filter Tabs */}
+            <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/70 p-1.5 backdrop-blur-xl text-xs font-mono text-slate-600 shadow-sm">
               <button
                 onClick={() => setActiveTab("active")}
-                className={`rounded-full px-3.5 py-1.5 transition ${
+                className={`rounded-full px-4 py-1.5 transition ${
                   activeTab === "active"
-                    ? "bg-zinc-950 text-white shadow-sm font-bold"
-                    : "hover:text-zinc-950"
+                    ? "bg-slate-900 text-white shadow-sm font-bold"
+                    : "hover:text-slate-950 hover:bg-slate-100"
                 }`}
               >
                 Active Queue ({activeQueue.length})
               </button>
               <button
                 onClick={() => setActiveTab("delivered")}
-                className={`rounded-full px-3.5 py-1.5 transition ${
+                className={`rounded-full px-4 py-1.5 transition ${
                   activeTab === "delivered"
-                    ? "bg-zinc-950 text-white shadow-sm font-bold"
-                    : "hover:text-zinc-950"
+                    ? "bg-slate-900 text-white shadow-sm font-bold"
+                    : "hover:text-slate-950 hover:bg-slate-100"
                 }`}
               >
                 Delivered ({deliveredQueue.length})
               </button>
               <button
                 onClick={() => setActiveTab("archived")}
-                className={`rounded-full px-3.5 py-1.5 transition ${
+                className={`rounded-full px-4 py-1.5 transition ${
                   activeTab === "archived"
-                    ? "bg-zinc-950 text-white shadow-sm font-bold"
-                    : "hover:text-zinc-950"
+                    ? "bg-slate-900 text-white shadow-sm font-bold"
+                    : "hover:text-slate-950 hover:bg-slate-100"
                 }`}
               >
                 Archived ({archivedQueue.length})
@@ -274,17 +277,17 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             {displayedItems.length === 0 && (
-              <div className="border border-dashed border-zinc-300 bg-white/60 p-12 text-center text-zinc-500 rounded-2xl">
-                <p className="font-serif text-xl text-zinc-900">
+              <div className="glass-panel p-12 text-center text-slate-500">
+                <p className="text-xl font-bold text-slate-900">
                   {activeTab === "active"
                     ? "No active proposals pending"
                     : activeTab === "delivered"
                     ? "No delivered proposals yet"
                     : "No archived proposals"}
                 </p>
-                <p className="mt-2 text-xs font-mono text-zinc-600">
+                <p className="mt-2 text-xs font-mono text-slate-600">
                   {activeTab === "active"
                     ? "Start a new client meeting to run the synthesis loop."
                     : "Proposal actions will appear here once updated."}
@@ -303,35 +306,35 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
                 <article
                   key={proposal.id}
                   onClick={() => setActiveProposalId(proposal.id)}
-                  className={`group relative cursor-pointer border bg-white p-6 rounded-2xl shadow-[0_2px_4px_rgba(0,0,0,0.02)] transition-all ${
+                  className={`glass-card group cursor-pointer transition-all duration-200 ${
                     isActiveSelected
-                      ? "border-zinc-950 ring-1 ring-zinc-950 shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
-                      : "border-zinc-200 hover:border-zinc-400 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]"
+                      ? "!border-slate-900 !ring-2 !ring-slate-900/10 shadow-md"
+                      : "hover:border-slate-300"
                   }`}
                 >
                   <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-3 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <span
                             className={`inline-block h-2 w-2 rounded-full ${
                               isArchived
-                                ? "bg-zinc-400"
+                                ? "bg-slate-400"
                                 : isDispatched
                                 ? "bg-emerald-500"
                                 : proposal.confidenceScore > 90
-                                ? "bg-zinc-950"
+                                ? "bg-slate-900"
                                 : "bg-amber-500"
                             }`}
                           />
                           <p
                             className={`text-xs font-mono font-bold uppercase tracking-widest ${
                               isArchived
-                                ? "text-zinc-500"
+                                ? "text-slate-500"
                                 : isDispatched
                                 ? "text-emerald-700"
                                 : proposal.confidenceScore > 90
-                                ? "text-zinc-950"
+                                ? "text-slate-900"
                                 : "text-amber-700"
                             }`}
                           >
@@ -343,8 +346,8 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
                           </p>
                         </div>
 
-                        {/* Archive / Restore Button */}
-                        <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition">
+                        {/* Archive / Restore Controls */}
+                        <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
                           {isArchived ? (
                             <>
                               <button
@@ -354,7 +357,7 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
                                   handleArchive(proposal.id, "restore");
                                 }}
                                 title="Restore to active queue"
-                                className="p-1.5 text-zinc-500 hover:text-zinc-950 transition"
+                                className="p-1.5 text-slate-500 hover:text-slate-900 transition"
                               >
                                 <RotateCcw className="h-4 w-4" />
                               </button>
@@ -378,7 +381,7 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
                                 handleArchive(proposal.id, "archive");
                               }}
                               title="Archive proposal"
-                              className="p-1.5 text-zinc-400 hover:text-zinc-900 transition"
+                              className="p-1.5 text-slate-400 hover:text-slate-900 transition"
                             >
                               <Archive className="h-4 w-4" />
                             </button>
@@ -386,20 +389,20 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
                         </div>
                       </div>
 
-                      <h3 className="font-serif text-2xl font-semibold text-zinc-950 group-hover:text-zinc-800 transition-colors">
+                      <h3 className="text-2xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
                         {proposal.title}
                       </h3>
 
-                      <p className="text-xs font-mono text-zinc-600">
-                        <span className="font-bold text-zinc-900">{proposal.client}</span> · {relativeTime(proposal.createdAt)}
+                      <p className="text-xs font-mono text-slate-600">
+                        <span className="font-bold text-slate-900">{proposal.client}</span> · {relativeTime(proposal.createdAt)}
                       </p>
 
-                      <div className="mt-4 flex flex-wrap items-center gap-3 pt-2 text-xs font-mono text-zinc-600 border-t border-zinc-100">
-                        <span className="inline-flex items-center gap-1 rounded-2xl bg-zinc-100 px-3 py-1 text-zinc-800">
-                          Confidence: <strong className="text-zinc-950">{proposal.confidenceScore}%</strong>
+                      <div className="mt-4 flex flex-wrap items-center gap-3 pt-3 text-xs font-mono text-slate-600 border-t border-slate-200/80">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-slate-800">
+                          Confidence: <strong className="text-slate-950">{proposal.confidenceScore}%</strong>
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-2xl bg-zinc-100 px-3 py-1 text-zinc-700">
-                          Meta-Agent Cycles: <strong>{proposal.iterations}</strong>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-slate-700">
+                          Meta-Cycles: <strong>{proposal.iterations}</strong>
                         </span>
 
                         {/* HITL Review & Refine Button */}
@@ -407,9 +410,9 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
                           <Link
                             href={`/admin/review/${proposal.projectId || proposal.id}`}
                             onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                            className="text-xs font-mono font-bold text-white bg-zinc-950 hover:bg-zinc-800 border border-zinc-900 rounded-2xl px-4 py-1.5 transition shadow-sm"
+                            className="btn btn-signal btn-sm font-mono text-xs gap-1"
                           >
-                            Review & Refine →
+                            Review & Refine <ExternalLink className="h-3 w-3" />
                           </Link>
                         </div>
                       </div>
@@ -428,7 +431,7 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
                               ? "Proposal confidence must exceed 90% before dispatch"
                               : "Approve and send email to client"
                           }
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-6 py-3.5 text-xs font-mono font-bold uppercase tracking-wider text-white shadow-sm transition-all duration-150 ease-in-out hover:bg-zinc-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 disabled:shadow-none"
+                          className="btn btn-signal btn-md text-xs font-mono uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {isSending ? (
                             <span>Sending…</span>
@@ -446,22 +449,22 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
         </div>
 
         {/* Dynamic Data-Driven Vertical Stepper Sidebar */}
-        <aside className="border-l border-zinc-200 pl-0 lg:pl-10">
-          <p className="text-xs font-mono font-bold uppercase tracking-[0.22em] text-zinc-500">
+        <aside className="glass-panel p-8 self-start">
+          <p className="text-xs font-mono font-bold uppercase tracking-widest text-slate-700 mb-6">
             {activeProposal
               ? `WORKFLOW: ${activeProposal.client.toUpperCase()}`
               : "WORKFLOW: OVERVIEW"}
           </p>
 
-          {/* Prominent Completion Badge */}
+          {/* Completion Badge */}
           {isAllPhasesCompleted && (
-            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 shadow-sm animate-in fade-in">
+            <div className="mb-6 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider text-emerald-900 shadow-sm animate-in fade-in">
               <Check className="h-4 w-4 text-emerald-600 stroke-[3]" />
               <span>✓ PROJECT COMPLETED & DELIVERED</span>
             </div>
           )}
 
-          <div className="relative mt-8 ml-2 border-l border-zinc-200 pl-6 space-y-8">
+          <div className="relative ml-2 border-l border-slate-200 pl-6 space-y-8">
             {stepsDefinition.map((step, index) => {
               const isCompleted = index < currentStepIndex;
               const isCurrent = index === currentStepIndex;
@@ -469,18 +472,18 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
               return (
                 <div key={step.title} className="relative flex items-start gap-3">
                   {/* Stepper Node Marker */}
-                  <div className="absolute -left-[33px] top-0.5 flex items-center justify-center bg-[#FAFAF8] p-1">
+                  <div className="absolute -left-[33px] top-0.5 flex items-center justify-center bg-[#f8fafc] p-1">
                     {isCompleted && (
-                      <CheckCircle2 className="h-4 w-4 text-zinc-950 fill-zinc-950 stroke-[#FAFAF8]" />
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 fill-emerald-600 stroke-[#f8fafc]" />
                     )}
                     {isCurrent && (
-                      <span className="relative flex h-3 w-3 items-center justify-center">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-zinc-950" />
+                      <span className="relative flex h-3.5 w-3.5 items-center justify-center">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-600 shadow-sm" />
                       </span>
                     )}
                     {!isCompleted && !isCurrent && (
-                      <Circle className="h-3 w-3 text-zinc-300 stroke-[2]" />
+                      <Circle className="h-3 w-3 text-slate-300 stroke-[2]" />
                     )}
                   </div>
 
@@ -489,15 +492,15 @@ export function MissionControl({ proposals, fetchError }: MissionControlProps) {
                     <span
                       className={`text-sm font-mono tracking-tight transition-colors ${
                         isCompleted
-                          ? "font-bold text-zinc-950"
+                          ? "font-bold text-slate-900"
                           : isCurrent
-                          ? "font-bold text-zinc-950"
-                          : "text-zinc-500"
+                          ? "font-bold text-indigo-600"
+                          : "text-slate-500"
                       }`}
                     >
                       {step.title}
                     </span>
-                    <p className="text-xs text-zinc-500 leading-normal font-sans">
+                    <p className="text-xs text-slate-600 leading-normal font-sans">
                       {step.description}
                     </p>
                   </div>

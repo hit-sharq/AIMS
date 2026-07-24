@@ -4,24 +4,24 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useUser, UserButton } from "@clerk/nextjs"
-import { Bell, X, Check, Users, ShieldCheck, Briefcase, LayoutDashboard, ShieldAlert } from "lucide-react"
+import { Bell, X, Check, Users, ShieldCheck, Briefcase, LayoutDashboard, ShieldAlert, Sparkles, FolderGit2, Cpu, BarChart3, Settings } from "lucide-react"
 import { RoleSelectorModal } from "@/components/app/RoleSelectorModal"
 
 import "./header.css"
 
 export function BrandMark({ compact }: { compact?: boolean }) {
   return (
-    <Link href="/" className="brandmark" aria-label="Synthos home">
+    <Link href="/" className="brandmark" aria-label="JITUME Agency OS home">
       <span className="brandmark-mark" aria-hidden>
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-          <path d="M3 17 L9 6 L13 13 L19 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="19" cy="4" r="2.1" fill="currentColor" />
+          <path d="M3 17 L9 6 L13 13 L19 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="19" cy="4" r="2.2" fill="currentColor" />
         </svg>
       </span>
       {!compact && (
         <span className="brandmark-word">
-          Synthos
-          <em>Creative Intelligence</em>
+          JITUME
+          <em>Agency OS</em>
         </span>
       )}
     </Link>
@@ -59,11 +59,14 @@ export default function Header() {
         setRoleModalOpen(true)
       }
     }
+
+    const handleRoleEvent = () => syncRole()
     window.addEventListener("storage", syncRole)
-    const interval = setInterval(syncRole, 1000)
+    window.addEventListener("synthos_role_change", handleRoleEvent)
+
     return () => {
       window.removeEventListener("storage", syncRole)
-      clearInterval(interval)
+      window.removeEventListener("synthos_role_change", handleRoleEvent)
     }
   }, [])
 
@@ -172,52 +175,49 @@ function HeaderContent({
         </div>
 
         <nav className={`topnav ${open ? "open" : ""}`}>
-          <Link href="/" className={`topnav-link ${pathname === "/" ? "active" : ""}`} onClick={() => setOpen(false)}>Home</Link>
-          <Link href="/intake" className={`topnav-link ${pathname === "/intake" ? "active" : ""}`} onClick={() => setOpen(false)}>Start a Project</Link>
-          
-          {/* Internal Workspace links shown when navigating inside Creator workspace */}
-          {isSignedIn && userRole === "creator" && isInternalRoute && (
-            <>
-              <Link href="/dashboard/overview" className={`topnav-link ${pathname.startsWith("/dashboard") ? "active" : ""}`} onClick={() => setOpen(false)}>
-                <LayoutDashboard size={14} style={{ marginRight: 6 }} /> Dashboard
-              </Link>
-              <Link href="/admin" className={`topnav-link ${pathname.startsWith("/admin") ? "active" : ""}`} onClick={() => setOpen(false)}>
-                <ShieldAlert size={14} style={{ marginRight: 6 }} /> Mission Control
-              </Link>
-            </>
-          )}
+          <Link href="/dashboard/overview" className={`topnav-link ${pathname === "/dashboard/overview" || pathname === "/" ? "active" : ""}`} onClick={() => setOpen(false)}>
+            <LayoutDashboard size={14} style={{ marginRight: 6 }} /> Dashboard
+          </Link>
+          <Link href="/admin" className={`topnav-link ${pathname.startsWith("/admin") ? "active" : ""}`} onClick={() => setOpen(false)}>
+            <ShieldAlert size={14} style={{ marginRight: 6 }} /> Workflow
+          </Link>
+          <Link href="/dashboard/projects" className={`topnav-link ${pathname.startsWith("/dashboard/projects") ? "active" : ""}`} onClick={() => setOpen(false)}>
+            <FolderGit2 size={14} style={{ marginRight: 6 }} /> Projects
+          </Link>
+          <Link href="/meeting/demo" className={`topnav-link ${pathname.startsWith("/meeting") ? "active" : ""}`} onClick={() => setOpen(false)}>
+            <Cpu size={14} style={{ marginRight: 6 }} /> Agents
+          </Link>
+          <Link href="/intake" className={`topnav-link ${pathname === "/intake" ? "active" : ""}`} onClick={() => setOpen(false)}>
+            Start Project
+          </Link>
         </nav>
 
         <div className="topbar-right">
           {/* Mode Badge & Role Switcher */}
           <button
+            type="button"
             className="btn btn-ghost btn-sm"
-            onClick={onOpenRoleModal}
+            onClick={() => onOpenRoleModal()}
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 6,
-              fontSize: "0.82rem",
-              background: userRole === "creator" ? "rgba(255, 255, 255, 0.12)" : userRole === "client" ? "rgba(16, 185, 129, 0.15)" : "transparent",
-              color: userRole === "creator" ? "#ffffff" : userRole === "client" ? "#34d399" : "var(--ink-2)",
-              border: userRole === "creator" ? "1px solid rgba(255, 255, 255, 0.3)" : userRole === "client" ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid var(--line)",
+              gap: 8,
+              fontSize: "0.84rem",
+              fontWeight: 600,
+              background: userRole === "creator" ? "rgba(79, 70, 229, 0.1)" : userRole === "client" ? "rgba(5, 150, 105, 0.1)" : "rgba(255, 255, 255, 0.8)",
+              color: userRole === "creator" ? "#4f46e5" : userRole === "client" ? "#059669" : "#334155",
+              border: userRole === "creator" ? "1px solid rgba(79, 70, 229, 0.25)" : userRole === "client" ? "1px solid rgba(5, 150, 105, 0.25)" : "1px solid rgba(203, 213, 225, 0.8)",
               borderRadius: "100px",
-              padding: "6px 14px",
+              padding: "7px 16px",
+              cursor: "pointer",
             }}
           >
-            {userRole === "creator" ? <ShieldCheck size={14} /> : userRole === "client" ? <Briefcase size={14} /> : <Users size={14} />}
+            {userRole === "creator" ? <ShieldCheck size={16} /> : userRole === "client" ? <Briefcase size={16} /> : <Users size={16} />}
             <span>{userRole === "creator" ? "Creator Mode" : userRole === "client" ? "Client Mode" : "Select Role"}</span>
           </button>
 
-          {/* Quick Creator Workspace Action button when in Creator mode on public pages */}
-          {userRole === "creator" && !isInternalRoute && (
-            <Link href={isSignedIn ? "/dashboard/overview" : "/sign-in"} className="btn btn-signal btn-sm">
-              Open Workspace →
-            </Link>
-          )}
-
           {!isLoaded ? (
-            <div style={{ width: 32, height: 32, background: "var(--surface-2)", borderRadius: "50%" }} />
+            <div style={{ width: 32, height: 32, background: "rgba(15, 23, 42, 0.05)", borderRadius: "50%" }} />
           ) : isSignedIn ? (
             <>
               {userRole === "creator" && (

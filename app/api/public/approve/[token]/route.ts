@@ -95,7 +95,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
             await sendEmail({
               to: project.clientRef.email,
               subject: `Proposal approved: ${project.name}`,
-              html: proposalApprovedEmail({ clientName: project.clientRef.name || project.client, projectName: project.name, bothApproved }),
+              html: proposalApprovedEmail({ clientName: project.clientRef.name || project.client, projectName: project.name, bothApproved }).html,
             })
           }
 
@@ -123,7 +123,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
                   await sendEmail({
                     to: adminUser.email,
                     subject: `Project approved: ${project.name}`,
-                    html: adminProjectApprovedEmail({ projectName: project.name }),
+                    html: adminProjectApprovedEmail({ projectName: project.name }).html,
                   })
                 }
               }
@@ -180,23 +180,19 @@ export async function POST(req: Request, { params }: { params: { token: string }
       if (action === "approve") {
         const project = await prisma.project.findUnique({
           where: { id: quote.projectId },
-          include: { owner: true, clientRef: true },
+          include: { proposal: true, clientRef: true, owner: true },
         })
 
         if (project) {
-          const proposal = await prisma.proposal.findUnique({ where: { projectId: project.id } })
-          const proposalApproved = proposal?.status === "approved"
-
-          await prisma.project.update({
-            where: { id: project.id },
-            data: { stage: "approval", nextAction: "Final approval — project ready to begin" },
-          })
+          const proposalApproved = project.proposal?.status === "approved"
 
           if (project.ownerId) {
             await sendNotification({
               userId: project.ownerId,
-              title: "Quote approved — project ready!",
-              message: `Client approved the quote for "${project.name}".${proposalApproved ? " Proposal also approved — project ready to begin." : ""}`,
+              title: proposalApproved ? "Project approved!" : "Quote approved",
+              message: proposalApproved
+                ? `Both proposal and quote for "${project.name}" have been approved.`
+                : `Client approved quote for "${project.name}". Awaiting proposal approval.`,
               kind: "system",
               refId: project.id,
             })
@@ -206,7 +202,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
             await sendEmail({
               to: project.clientRef.email,
               subject: `Quote approved: ${project.name}`,
-              html: quoteApprovedEmail({ clientName: project.clientRef.name || project.client, projectName: project.name, proposalApproved }),
+              html: quoteApprovedEmail({ clientName: project.clientRef.name || project.client, projectName: project.name, proposalApproved }).html,
             })
           }
 
@@ -224,7 +220,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
                   await sendEmail({
                     to: adminUser.email,
                     subject: `Project approved: ${project.name}`,
-                    html: adminProjectApprovedEmail({ projectName: project.name }),
+                    html: adminProjectApprovedEmail({ projectName: project.name }).html,
                   })
                 }
               }

@@ -21,7 +21,7 @@ export async function GET() {
       type: item.type,
       client: item.project?.clientName || "Client Project",
       clientEmail: item.project?.clientEmail || item.recipientEmail,
-      serviceLine: item.project?.serviceLine || "Agency Service",
+      serviceLine: (item.project as any)?.serviceLine || "Agency Service",
       title: item.title,
       content: item.content,
       status: item.status,
@@ -34,7 +34,7 @@ export async function GET() {
       approvedAt: item.approvedAt ? item.approvedAt.toISOString() : null,
       dispatchedAt: item.dispatchedAt ? item.dispatchedAt.toISOString() : null,
       createdAt: item.createdAt.toISOString(),
-      discoveryNotes: item.project?.discoveryNotes || null,
+      discoveryNotes: (item.project as any)?.discoveryNotes || null,
       fathomNotes: item.project?.fathomNotes || null,
     }));
 

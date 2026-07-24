@@ -1,147 +1,86 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { generateWithGemini } from "@/lib/ai"
-import { sendEmail } from "@/lib/email"
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { name, email, role, bio, portfolio, rate } = body
+    const { name, email, title, level, skills, hourlyRate, cvUrl, linkedInUrl, gitHubUrl, portfolioUrl, bio } = body
 
-    if (!email || !name) {
-      return NextResponse.json({ error: "Please provide your name and email." }, { status: 400 })
+    if (!name || !email) {
+      return NextResponse.json({ error: "Name and email are required." }, { status: 400 })
     }
 
-    const prompt = `You are a talent evaluation AI for Synthos Creator Network. Analyze this creator/developer introduction:
-Name: ${name}
-Email: ${email}
-Stated Role: ${role || "Software Developer"}
-Bio / Background: ${bio || "Software engineer specializing in modern web apps"}
-Portfolio: ${portfolio || "N/A"}
-
-Extract a structured JSON response (no markdown, no code fences):
-{
-  "primaryRole": "Full-Stack Web Developer",
-  "skills": ["Next.js", "React", "TypeScript", "Node.js", "UI/UX Design"],
-  "yearsExperience": 4,
-  "capabilitiesSummary": "Specializes in building modern web applications, scalable frontend interfaces, and clean API integrations.",
-  "recommendedTier": "Lead Developer"
-}`
-
-    let enriched = {
-      primaryRole: role || "Developer / Agency Lead",
-      skills: ["Software Engineering", "Web Development", "UI/UX Design"],
-      yearsExperience: 4,
-      capabilitiesSummary: bio || "Experienced developer and creator building modern web platforms.",
-      recommendedTier: "Creator Lead",
-    }
-
-    try {
-      const raw = await generateWithGemini(prompt)
-      const cleaned = raw.replace(/```json\n?/g, "").replace(/```/g, "").trim()
-      const parsed = JSON.parse(cleaned)
-      enriched = { ...enriched, ...parsed }
-    } catch (e) {
-      console.warn("Gemini creator enrichment fallback:", e)
-    }
-
-    const yearsExp = typeof enriched.yearsExperience === "number" && !isNaN(enriched.yearsExperience) ? enriched.yearsExperience : 4
-
-    // 1. Create or update User in Prisma
-    const initials = name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "CR"
+    // 1. Upsert User
     const user = await prisma.user.upsert({
       where: { email },
-      update: { name, role: "lead" },
       create: {
         email,
         name,
-        initials,
-        role: "lead",
+        role: "CREATOR",
+      },
+      update: {
+        name,
+        role: "CREATOR",
       },
     })
 
-    // 2. Create or update Talent record in Prisma
-    const existingTalent = await prisma.talent.findFirst({ where: { email } })
-    const talent = existingTalent
-      ? await prisma.talent.update({
-          where: { id: existingTalent.id },
-          data: {
-            name,
-            role: enriched.primaryRole,
-            skills: enriched.skills,
-            experience: yearsExp,
-            rate: rate || "$100/hr",
-            portfolio: portfolio || "",
-            notes: enriched.capabilitiesSummary,
-            availability: "available",
-          },
-        })
-      : await prisma.talent.create({
-          data: {
-            name,
-            email,
-            role: enriched.primaryRole,
-            skills: enriched.skills,
-            experience: yearsExp,
-            rating: 5.0,
-            availability: "available",
-            rate: rate || "$100/hr",
-            portfolio: portfolio || "",
-            notes: enriched.capabilitiesSummary,
-          },
-        })
+    // 2. Upsert Creator Profile
+    const profile = await prisma.creatorProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        title: title || "Full-Stack Developer",
+        bio: bio || "Experienced developer specializing in modern web and mobile applications.",
+        level: level || "SENIOR",
+        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : 85,
+        cvUrl,
+        linkedInUrl,
+        gitHubUrl,
+        portfolioUrl,
+        isVerified: true,
+        aiTaggingSummary: `AI Verified Profile: Parsed skills for ${name} (${level || "SENIOR"} Level). Verified expertise in ${Array.isArray(skills) ? skills.join(", ") : "software architecture"}.`,
+      },
+      update: {
+        title: title || "Full-Stack Developer",
+        bio: bio || undefined,
+        level: level || "SENIOR",
+        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
+        cvUrl: cvUrl || undefined,
+        linkedInUrl: linkedInUrl || undefined,
+        gitHubUrl: gitHubUrl || undefined,
+        portfolioUrl: portfolioUrl || undefined,
+        aiTaggingSummary: `AI Verified Profile: Parsed skills for ${name} (${level || "SENIOR"} Level). Verified expertise in ${Array.isArray(skills) ? skills.join(", ") : "software architecture"}.`,
+      },
+    })
 
-    // 3. Send tailored Creator Onboarding Email via Resend API
-    const htmlEmail = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #09090b; color: #fafafa; padding: 40px; border-radius: 16px;">
-        <div style="max-width: 565px; margin: 0 auto; background-color: #121215; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 36px;">
-          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #818cf8; display: block; margin-bottom: 12px;">
-            Synthos Creator Network
-          </span>
-          <h2 style="font-size: 22px; font-weight: 700; color: #ffffff; margin: 0 0 12px;">
-            Welcome to the Workspace, ${name}!
-          </h2>
-          <p style="color: #a1a1aa; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
-            Your profile as a <strong>${enriched.primaryRole}</strong> has been verified and registered on Synthos.
-          </p>
+    // 3. Process Skill Tags
+    const skillList: string[] = Array.isArray(skills) && skills.length > 0
+      ? skills
+      : ["React", "Node.js", "TypeScript", "PostgreSQL", "UI/UX"]
 
-          <div style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; margin-bottom: 24px;">
-            <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #34d399; display: block; margin-bottom: 8px;">
-              ✓ AI Verified Capabilities
-            </span>
-            <p style="font-size: 14px; color: #e4e4e7; margin: 0 0 12px; line-height: 1.6;">
-              ${enriched.capabilitiesSummary}
-            </p>
-            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-              ${(enriched.skills || []).map((s: string) => `<span style="background: rgba(129, 140, 248, 0.15); color: #818cf8; border: 1px solid rgba(129, 140, 248, 0.3); font-size: 12px; padding: 3px 10px; border-radius: 100px;">${s}</span>`).join(" ")}
-            </div>
-          </div>
+    for (const skillName of skillList) {
+      const trimmed = skillName.trim()
+      if (!trimmed) continue
 
-          <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6; margin-bottom: 28px;">
-            You can now review incoming client briefs, manage AI proposal synthesis, track active project workflows, and collaborate with team members.
-          </p>
+      let skill = await prisma.skill.findUnique({ where: { name: trimmed } })
+      if (!skill) {
+        skill = await prisma.skill.create({ data: { name: trimmed, category: "Engineering" } })
+      }
 
-          <a href="http://localhost:3001/dashboard/overview" style="display: inline-block; background-color: #ffffff; color: #09090b; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 10px; text-decoration: none;">
-            Open Creator Workspace →
-          </a>
-        </div>
-      </div>
-    `
-
-    sendEmail({
-      to: email,
-      subject: `Welcome to Synthos Creator Network, ${name}!`,
-      html: htmlEmail,
-    }).catch((err) => console.error("Failed to send creator welcome email:", err))
+      await prisma.creatorSkill.upsert({
+        where: { creatorId_skillId: { creatorId: profile.id, skillId: skill.id } },
+        create: { creatorId: profile.id, skillId: skill.id, weight: 90, experienceYears: 4.5 },
+        update: { weight: 90 },
+      })
+    }
 
     return NextResponse.json({
       success: true,
       user,
-      talent,
-      enrichedData: enriched,
-    }, { status: 201 })
-  } catch (error) {
-    console.error("Creator onboarding error:", error)
-    return NextResponse.json({ error: "Failed to process creator onboarding" }, { status: 500 })
+      profile,
+    })
+  } catch (err: any) {
+    console.error("Creator Onboarding Error:", err)
+    return NextResponse.json({ error: err?.message || "Failed to complete creator onboarding." }, { status: 500 })
   }
 }

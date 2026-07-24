@@ -273,7 +273,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
               await sendEmail({
                 to: adminUser.email,
                 subject: `Project approved: ${project.name}`,
-                html: adminProjectApprovedEmail({ projectName: project.name }),
+                html: adminProjectApprovedEmail({ projectName: project.name }).html,
               })
             }
           }
@@ -283,7 +283,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           await sendEmail({
             to: project.clientRef!.email!,
             subject: `Your project "${project.name}" has been approved!`,
-            html: projectApprovedClientEmail({ clientName: project.clientRef!.name || project.client, projectName: project.name }),
+            html: projectApprovedClientEmail({ clientName: project.clientRef!.name || project.client, projectName: project.name }).html,
           })
         }
 

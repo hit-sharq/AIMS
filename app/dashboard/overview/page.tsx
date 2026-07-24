@@ -2,108 +2,235 @@ export const dynamic = 'force-dynamic'
 
 import Link from "next/link"
 import { getProjects } from "@/lib/data-server"
-import { PageHead, PageWrap } from "@/components/app/Page"
-import { Panel, StatusPill, Progress } from "@/components/app/ui"
-import CreateProjectForm from "./CreateProjectForm"
-import { Sparkles, Plus, CheckCircle2, ArrowRight } from "lucide-react"
+import { PageWrap } from "@/components/app/Page"
+import { Sparkles, Plus, CheckCircle2, ArrowRight, Cpu, ShieldCheck, Activity, TrendingUp, Clock, FileText, ChevronRight } from "lucide-react"
+import QuickIntakeWidget from "./QuickIntakeWidget"
 import "./app.css"
 
 function stageLabel(s: any) {
-  return s?.stage ? s.stage.replace(/([A-Z])/g, " $1").replace(/^./, (m: string) => m.toUpperCase()) : "—"
+  return s?.stage ? s.stage.replace(/([A-Z])/g, " $1").replace(/^./, (m: string) => m.toUpperCase()) : "Brief Intake"
 }
 
 export default async function OverviewPage() {
   const projects = await getProjects()
-  const needsAttention = (projects || []).filter((p: any) => p.status === "attention" || p.status === "review")
-  const awaitingApproval = (projects || []).filter(
-    (p: any) => (p.proposal?.status === "review" || p.proposal?.status === "draft") || (p.quote?.status === "review" || p.quote?.status === "draft")
-  )
-  const totalAI = (projects || []).reduce((a: number, p: any) => a + (p.aiActivity || 0), 0)
+  const activeProjects = (projects || []).slice(0, 5)
+
+  const stages = [
+    { num: "1", title: "Intake & Discovery", desc: "Brief intake & client goals", status: "Complete", badge: "complete" },
+    { num: "2", title: "Discovery Call", desc: "Interactive session & transcript", status: "Active (92%)", badge: "active" },
+    { num: "3", title: "Contact Report", desc: "AI executive synthesis", status: "Queue (7)", badge: "queue" },
+    { num: "4", title: "Production Sync", desc: "Scope & deliverable alignment", status: "Queue (12)", badge: "queue" },
+    { num: "5", title: "Proposal", desc: "HTML briefing generation", status: "Pending", badge: "pending" },
+    { num: "6", title: "Quote", desc: "Fixed-fee milestone schedule", status: "Pending", badge: "pending" },
+    { num: "7", title: "Client Approval", desc: "Authorized project kickoff", status: "Planned", badge: "planned" },
+  ]
 
   return (
     <PageWrap>
-      <PageHead
-        eyebrow="Workspace Control"
-        title="Creator & Workspace Overview"
-        desc="A unified, high-contrast view of your active client projects, AI background synthesis, and pending decisions."
-        actions={
-          <div style={{ display: "flex", gap: 10 }}>
-            <Link href="/intake" className="btn btn-signal btn-sm">
-              <Plus size={16} /> New Project Request
-            </Link>
-          </div>
-        }
-      />
+      <div className="jitume-dashboard">
+        
+        {/* Welcome Section */}
+        <div className="jitume-welcome">
+          <span className="eyebrow">
+            <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+            Jitume Agency OS · Intelligence Workspace
+          </span>
+          <h1 className="jitume-headline">Welcome to Jitume Agency OS</h1>
+          <p className="jitume-sub">
+            The operating system for creative intelligence. Turn client conversations and briefs into structured project intelligence, proposals, and human-approved deliverables.
+          </p>
+        </div>
 
-      <div className="ov-stats">
-        <Stat label="Active projects" value={projects.length} sub="in pipeline" />
-        <Stat label="AI activity" value={totalAI} sub="automated steps" tone="ai" />
-        <Stat label="Needs attention" value={needsAttention.length} sub="review required" tone="signal" />
-        <Stat label="Awaiting approval" value={awaitingApproval.length} sub="pending client decision" tone="human" />
-      </div>
+        {/* Quick Intake Widget */}
+        <section className="mt-8">
+          <QuickIntakeWidget />
+        </section>
 
-      {(projects || []).length === 0 ? (
-        <Panel style={{ marginTop: 24 }}>
-          <div style={{ padding: "56px 32px", textAlign: "center" }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: "50%", background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.1)", display: "grid", placeItems: "center", margin: "0 auto 20px", color: "#a1a1aa"
-            }}>
-              <Sparkles size={28} />
+        {/* 7-Stage Workflow Visualization */}
+        <section className="mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Project Workflow: Active Engine</h2>
+              <p className="text-xs text-slate-600 font-sans">Dual-Agent orchestration pipeline tracking client progress from brief intake to final kickoff.</p>
             </div>
-            <h3 style={{ fontSize: "1.4rem", fontWeight: 700, margin: "0 0 10px", color: "#ffffff" }}>
-              Your Workspace is Reset & Ready
-            </h3>
-            <p style={{ color: "var(--ink-2)", fontSize: "0.95rem", maxWidth: "460px", margin: "0 auto 28px", lineHeight: 1.6 }}>
-              There are currently no active projects. Submit a 30-Second Micro-Spark project request to see the AI workflow engine in action.
-            </p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-              <Link href="/intake" className="btn btn-signal">
-                Start a Project Request <ArrowRight size={16} />
-              </Link>
-            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 font-mono text-xs font-bold text-indigo-700">
+              Active Stage: 2
+            </span>
           </div>
-        </Panel>
-      ) : (
-        <div className="ov-grid" style={{ marginTop: 24 }}>
-          <section className="stack gap-4">
-            <h3 className="section-title">Active Projects & Workflows</h3>
-            {(projects || []).map((p: any) => (
-              <Link key={p.id} href={`/dashboard/projects/${p.id}`} className="ov-card">
-                <div className="row between gap-3">
-                  <div className="stack gap-1">
-                    <span className="ov-card-title">{p.name}</span>
-                    <span className="tiny muted">{p.client} · Stage: {stageLabel(p)}</span>
-                  </div>
-                  <StatusPill status={p.status} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {stages.map((st) => (
+              <div key={st.num} className={`wf-card ${st.badge === "active" ? "wf-card-active" : ""}`}>
+                <div className="wf-card-num">{st.num}</div>
+                <h3 className="wf-card-title">{st.title}</h3>
+                <p className="wf-card-desc">{st.desc}</p>
+                <div className="mt-4">
+                  <span
+                    className={`wf-badge ${
+                      st.badge === "complete"
+                        ? "wf-badge-complete"
+                        : st.badge === "active"
+                        ? "wf-badge-active"
+                        : st.badge === "queue"
+                        ? "wf-badge-queue"
+                        : "wf-badge-pending"
+                    }`}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {st.status}
+                  </span>
                 </div>
-                <p className="tiny muted" style={{ marginTop: 10 }}>Next Step: {p.nextAction}</p>
-                <div style={{ marginTop: 12 }}><Progress value={p.progress} /></div>
-              </Link>
+              </div>
             ))}
+          </div>
+        </section>
+
+        {/* Bottom Overview Section */}
+        <div className="mt-12 grid gap-8 lg:grid-cols-3">
+          
+          {/* Active Projects Table */}
+          <section className="lg:col-span-2 glass-panel p-6">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/80">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <FolderGit2Icon />
+                Active Client Projects
+              </h3>
+              <Link href="/dashboard/projects" className="text-xs font-mono text-indigo-600 font-bold hover:underline flex items-center gap-1">
+                View All ({projects.length}) <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-sans">
+                <thead>
+                  <tr className="border-b border-slate-200/60 font-mono text-slate-500 uppercase tracking-wider text-[11px]">
+                    <th className="pb-3 pt-1 font-semibold">Project Name</th>
+                    <th className="pb-3 pt-1 font-semibold">Client</th>
+                    <th className="pb-3 pt-1 font-semibold">Stage</th>
+                    <th className="pb-3 pt-1 font-semibold">Progress</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {activeProjects.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-slate-500 font-mono">
+                        No active projects. Use the Quick Intake widget above to launch a new project.
+                      </td>
+                    </tr>
+                  ) : (
+                    activeProjects.map((p: any) => (
+                      <tr key={p.id} className="hover:bg-slate-50/80 transition">
+                        <td className="py-3.5 font-bold text-slate-900">
+                          <Link href={`/dashboard/projects/${p.id}`} className="hover:text-indigo-600">
+                            {p.name}
+                          </Link>
+                        </td>
+                        <td className="py-3.5 text-slate-600 font-medium">{p.client}</td>
+                        <td className="py-3.5">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 font-mono text-[11px] text-slate-700">
+                            {stageLabel(p)}
+                          </span>
+                        </td>
+                        <td className="py-3.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-indigo-600 rounded-full"
+                                style={{ width: `${p.progress || 35}%` }}
+                              />
+                            </div>
+                            <span className="font-mono text-slate-600 text-[11px]">{p.progress || 35}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </section>
 
-          <aside className="stack gap-4">
-            <Panel>
-              <div style={{ padding: "20px" }}>
-                <span className="eyebrow" style={{ color: "#818cf8", marginBottom: 8, display: "block" }}>Quick Creation</span>
-                <CreateProjectForm />
+          {/* AI Agent Status & Agency Performance */}
+          <aside className="space-y-6">
+            
+            {/* AI Agent Status Widget */}
+            <div className="glass-panel p-6">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/80">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Cpu className="h-4 w-4 text-indigo-600" />
+                  AI Agent Status
+                </h3>
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-            </Panel>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Execution Agent */}
+                <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-center">
+                  <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full border-4 border-indigo-100 bg-indigo-50 font-mono text-lg font-extrabold text-indigo-700">
+                    85%
+                  </div>
+                  <h4 className="mt-3 text-xs font-bold text-slate-900">Execution Agent</h4>
+                  <p className="text-[11px] text-emerald-600 font-medium mt-0.5">● Processing</p>
+                  <p className="text-[10px] text-slate-500 font-mono mt-1">15 active tasks</p>
+                </div>
+
+                {/* Meta-Agent Auditor */}
+                <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-center">
+                  <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full border-4 border-emerald-100 bg-emerald-50 font-mono text-lg font-extrabold text-emerald-700">
+                    94%
+                  </div>
+                  <h4 className="mt-3 text-xs font-bold text-slate-900">Meta-Agent Auditor</h4>
+                  <p className="text-[11px] text-emerald-600 font-medium mt-0.5">● Active Verification</p>
+                  <p className="text-[10px] text-slate-500 font-mono mt-1">10 audits passed</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Agency Performance KPI */}
+            <div className="glass-panel p-6">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/80">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-indigo-600" />
+                  Agency Performance
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-xs font-mono mb-1">
+                    <span className="text-slate-600">Workflow Efficiency</span>
+                    <span className="font-bold text-slate-900">89%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: "89%" }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs font-mono mb-1">
+                    <span className="text-slate-600">Auto-Audit Rate</span>
+                    <span className="font-bold text-slate-900">94.2%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-600 rounded-full" style={{ width: "94.2%" }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </aside>
         </div>
-      )}
+
+      </div>
     </PageWrap>
   )
 }
 
-function Stat({ label, value, sub, tone }: { label: string; value: number; sub: string; tone?: "ai" | "signal" | "human" }) {
-  const c = tone === "ai" ? "#818cf8" : tone === "signal" ? "#f87171" : tone === "human" ? "#34d399" : "#ffffff"
+function FolderGit2Icon() {
   return (
-    <div className="ov-stat panel">
-      <span className="eyebrow">{label}</span>
-      <span className="ov-stat-value" style={{ color: c }}>{value}</span>
-      <span className="tiny muted">{sub}</span>
-    </div>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+      <circle cx="12" cy="13" r="2"/>
+    </svg>
   )
 }

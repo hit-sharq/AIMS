@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { BrandMark } from "@/components/app/Header"
 import { prisma } from "@/lib/prisma"
 import "./home.css"
 import "@/components/app/blog.css"
@@ -7,22 +6,27 @@ import "@/components/app/blog.css"
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  const recentBlog = await prisma.post.findMany({
-    where: { kind: "blog", status: "published" },
-    orderBy: { publishedAt: "desc" },
-    take: 3,
-  })
+  const recentBlog = (prisma as any).post
+    ? await (prisma as any).post.findMany({
+        where: { kind: "blog", status: "published" },
+        orderBy: { publishedAt: "desc" },
+        take: 3,
+      }).catch(() => [])
+    : []
 
-  const recentNews = await prisma.post.findMany({
-    where: { kind: "news", status: "published" },
-    orderBy: { publishedAt: "desc" },
-    take: 3,
-  })
+  const recentNews = (prisma as any).post
+    ? await (prisma as any).post.findMany({
+        where: { kind: "news", status: "published" },
+        orderBy: { publishedAt: "desc" },
+        take: 3,
+      }).catch(() => [])
+    : []
 
   return (
     <main>
       <section className="hero">
-        <div className="container">
+        <div className="hero-bg-glow" />
+        <div className="container hero-container">
           <span className="eyebrow">Creative Intelligence Platform</span>
           <h1 className="hero-title">
             AI accelerates the work.<br />
@@ -31,11 +35,11 @@ export default async function Home() {
           <p className="hero-lede">
             Synthos turns client conversations and creative briefs into structured project intelligence, strategic direction, proposals, quotes, and human-approved deliverables.
           </p>
-          <div className="row gap-3 wrap">
+          <div className="row gap-3 wrap" style={{ justifyContent: "center" }}>
             <Link href="/dashboard/overview" className="btn btn-signal btn-lg">Open workspace →</Link>
             <Link href="/dashboard/projects" className="btn btn-ghost btn-lg">View projects</Link>
           </div>
-          <div className="row gap-2 wrap" style={{ marginTop: 22 }}>
+          <div className="row gap-2 wrap" style={{ justifyContent: "center", marginTop: 22 }}>
             <span className="tag-ai"><span className="dot dot-ai" /> AI assists</span>
             <span className="tag-human"><span className="dot dot-human" /> Humans decide</span>
           </div>
@@ -79,8 +83,8 @@ export default async function Home() {
               <div style={{ marginBottom: 40 }}>
                 <span className="eyebrow" style={{ textTransform: "capitalize", color: "var(--signal)", marginBottom: 12, display: "block" }}>Blog</span>
                 <div className="blog-grid">
-                  {recentBlog.map((post) => (
-                    <article key={post.id} className="blog-card">
+                  {recentBlog.map((post: any) => (
+                    <article key={post.id} className="glass-card">
                       {post.coverImage && (
                         <div className="blog-card-img">
                           <img src={post.coverImage} alt={post.title} />
@@ -102,8 +106,8 @@ export default async function Home() {
               <div style={{ paddingBottom: 48 }}>
                 <span className="eyebrow" style={{ textTransform: "capitalize", color: "var(--ai)", marginBottom: 12, display: "block" }}>News</span>
                 <div className="blog-grid">
-                  {recentNews.map((post) => (
-                    <article key={post.id} className="blog-card">
+                  {recentNews.map((post: any) => (
+                    <article key={post.id} className="glass-card">
                       {post.coverImage && (
                         <div className="blog-card-img">
                           <img src={post.coverImage} alt={post.title} />
@@ -124,15 +128,17 @@ export default async function Home() {
         </section>
       )}
 
-      <section className="section" style={{ background: "var(--bg-elevated)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
+      <section className="section" style={{ background: "rgba(255, 255, 255, 0.6)", backdropFilter: "blur(20px)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
         <div className="container" style={{ maxWidth: 780, textAlign: "center" }}>
           <span className="eyebrow">Built for creative teams</span>
-          <h2 className="display" style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", marginBottom: 18 }}>The operating system for creative intelligence</h2>
+          <h2 className="display" style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", marginBottom: 18, marginTop: 12 }}>The operating system for creative intelligence</h2>
           <p className="lede" style={{ marginBottom: 28 }}>
             From the first creative brief to the final human approval, Synthos keeps the entire creative intelligence workflow in one calm, considered workspace.
           </p>
-          <Link href="/dashboard/overview" className="btn btn-signal btn-lg">Get started →</Link>
-          <Link href="/intake" className="btn btn-ghost btn-lg">Start a project →</Link>
+          <div className="row gap-3 wrap" style={{ justifyContent: "center" }}>
+            <Link href="/dashboard/overview" className="btn btn-signal btn-lg">Get started →</Link>
+            <Link href="/intake" className="btn btn-ghost btn-lg">Start a project →</Link>
+          </div>
         </div>
       </section>
 
@@ -169,9 +175,11 @@ export default async function Home() {
 
       <section className="section foot-cta">
         <div className="container" style={{ textAlign: "center" }}>
-          <h2 className="display" style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", marginBottom: 14 }}>Ready to move work forward?</h2>
-          <p className="lede" style={{ marginBottom: 28 }}>Open your workspace and see what needs your attention next.</p>
-          <Link href="/dashboard/overview" className="btn btn-signal btn-lg">Open Synthos →</Link>
+          <div className="foot-cta-inner">
+            <h2 className="display" style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", marginBottom: 14 }}>Ready to move work forward?</h2>
+            <p className="lede" style={{ marginBottom: 28 }}>Open your workspace and see what needs your attention next.</p>
+            <Link href="/dashboard/overview" className="btn btn-signal btn-lg">Open Synthos →</Link>
+          </div>
         </div>
       </section>
     </main>

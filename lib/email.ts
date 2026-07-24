@@ -15,7 +15,7 @@ export async function sendEmail(params: {
   const resend = new Resend(apiKey)
 
   try {
-    const fromAddress = params.from || process.env.RESEND_FROM_EMAIL || "Synthos <onboarding@resend.dev>"
+    const fromAddress = params.from || process.env.RESEND_FROM_EMAIL || "Sharlmon <hello@sharl-tech.co.ke>"
 
     const { data, error } = await resend.emails.send({
       from: fromAddress,

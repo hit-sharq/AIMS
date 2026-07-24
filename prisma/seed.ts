@@ -16,6 +16,8 @@ async function main() {
       clientEmail: "team@genesis.co.ke",
       name: "Moringa Hackathon launch",
       roomName: "moringa-hackathon-launch-ab12cd34",
+      type: "Web & Product",
+      nextAction: "Review proposal",
       serviceLine: "Custom Web Application",
       stage: "ready_for_dispatch",
       status: "active",
@@ -42,7 +44,7 @@ async function main() {
           approvedAt: new Date(),
         },
       },
-    },
+    } as any,
   });
 
   const p2 = await prisma.project.create({
@@ -51,6 +53,8 @@ async function main() {
       clientEmail: "tech@apeiron.com",
       name: "Global Payment Engine Migration",
       roomName: "global-payment-engine-migration-ef56gh78",
+      type: "Strategy & Campaign",
+      nextAction: "Production deployment",
       serviceLine: "Fintech Infrastructure",
       stage: "delivered",
       status: "active",
@@ -77,7 +81,7 @@ async function main() {
           dispatchedAt: new Date(Date.now() - 43200000),
         },
       },
-    },
+    } as any,
   });
 
   const p3 = await prisma.project.create({
@@ -86,6 +90,8 @@ async function main() {
       clientEmail: "ops@nairobilogistics.com",
       name: "AI Customer Support Portal",
       roomName: "ai-customer-support-portal-ij90kl12",
+      type: "Brand & Campaign",
+      nextAction: "Complete discovery call",
       serviceLine: "AI & Automation",
       stage: "discovery",
       status: "active",
@@ -109,7 +115,7 @@ async function main() {
           metaAuditNotes: "Requires client clarification on custom ERP integration endpoints before approval gate.",
         },
       },
-    },
+    } as any,
   });
 
   console.log("✅ Database seeding complete! Seeded 3 projects and proposals.");
