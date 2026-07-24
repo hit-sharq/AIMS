@@ -47,6 +47,7 @@ export async function POST(req: Request) {
         jobTitle: updatedMatch.job.title,
         confidenceScore: updatedMatch.confidenceScore,
         jobId: updatedMatch.job.id,
+        matchId: updatedMatch.id,
       })
     }
 

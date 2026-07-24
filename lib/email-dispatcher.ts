@@ -12,8 +12,9 @@ export async function dispatchMatchApprovedEmails(params: {
   jobTitle: string
   confidenceScore: number
   jobId: string
+  matchId: string
 }) {
-  const { creatorEmail, creatorName, clientEmail, clientName, jobTitle, confidenceScore, jobId } = params
+  const { creatorEmail, creatorName, clientEmail, clientName, jobTitle, confidenceScore, jobId, matchId } = params
 
   const results = { creatorEmailSent: false, clientEmailSent: false }
 
@@ -70,9 +71,9 @@ export async function dispatchMatchApprovedEmails(params: {
           <p style="color: #4f46e5; font-size: 14px; margin: 4px 0 0 0;">AI Match Rating: <strong>${confidenceScore}% Match</strong></p>
         </div>
         <p style="color: #334155; font-size: 14px;">
-          Log in to your Client Portal to review their profile and initiate project kickoff.
+          Review the developer profile and AI match rationale to initiate project kickoff.
         </p>
-        <a href="http://localhost:3000/dashboard/projects" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: bold; font-size: 14px; margin-top: 12px;">
+        <a href="http://localhost:3000/client/match/${matchId}" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 9999px; font-weight: bold; font-size: 14px; margin-top: 12px;">
           Review Developer Profile →
         </a>
       </div>
