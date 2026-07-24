@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { useUser } from "@clerk/nextjs"
 import Link from "next/link"
 import "@/components/app/admin.css"
 
@@ -23,27 +22,31 @@ type ProjectData = {
   status: string
   progress: number
   client: string
-  clientRef: any
-  createdAt: string
-  brief: any
-  call: any
-  projectBrief: any
-  proposal: any
-  quote: any
-  deliverables: any[]
-  messages: Message[]
+  clientName?: string
+  clientCompany?: string
+  fathomMeetingId?: string
+  fathomSummary?: string
+  deliverables?: string[]
+  brief?: any
+  callSummary?: any
+  understanding?: any
+  synthesis?: any
+  proposal?: any
+  quote?: any
+  roomName?: string
+  messages?: Message[]
 }
 
 const STAGES = [
-  "brief", "call", "contactReport", "productionMeeting",
-  "transcript", "understanding", "projectBrief",
+  "intake", "brief", "call", "understanding",
   "workshop", "synthesis", "proposal", "quote", "approval",
 ]
 
 export default function PublicProjectPage() {
   const params = useParams()
   const token = params.token as string
-  const { user, isLoaded } = useUser()
+  const user = null
+  const isLoaded = true
   const [data, setData] = useState<ProjectData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

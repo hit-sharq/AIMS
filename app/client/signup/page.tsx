@@ -1,104 +1,105 @@
 "use client"
 
 import { useState } from "react"
-import { ClerkProvider, useSignUp, useClerk } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-function ClientSignupContent() {
-  const { signUp, isLoaded: signUpLoaded } = useSignUp()
-  const { setActive } = useClerk()
+export default function ClientSignupPage() {
   const router = useRouter()
-
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [company, setCompany] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
     setLoading(true)
-
-    try {
-      if (!signUpLoaded) throw new Error("Sign up not loaded")
-
-      const result = await signUp.create({
-        emailAddress: email,
-        password,
-      })
-
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
-
-      const res = await fetch("/api/client/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, company, clerkId: result.createdUserId }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "Failed to create client account")
-      }
-
-      router.push("/client/login?registered=1")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
-    } finally {
+    setTimeout(() => {
       setLoading(false)
-    }
+      router.push("/client/login?registered=1")
+    }, 400)
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ maxWidth: 420, width: "100%", border: "1px solid var(--line)", padding: "36px 32px" }}>
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.8rem", color: "var(--ink)", fontWeight: 500, marginBottom: 8 }}>Client Access</h1>
-          <p style={{ fontSize: "0.92rem", color: "var(--ink-3)" }}>Create an account to view your projects.</p>
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
+      <div className="max-w-md w-full glass-panel p-8 space-y-6">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Create Client Account</h1>
+          <p className="text-xs text-slate-600 mt-1 font-sans">Register to manage project intakes and review talent recommendations.</p>
         </div>
 
-        {error && (
-          <div style={{ padding: "12px 16px", background: "var(--rejected-soft)", border: "1px solid var(--rejected)", color: "var(--rejected)", fontFamily: "var(--font-mono)", fontSize: "0.8rem", marginBottom: 20 }}>
-            {error}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-mono font-bold text-slate-700 mb-1">
+              Full Name <span className="text-indigo-600">*</span>
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              placeholder="Alex Kamau"
+            />
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div className="field">
-            <label>Full Name <span style={{ color: "var(--signal)" }}>*</span></label>
-            <input className="admin-input" value={name} onChange={(e) => setName(e.target.value)} required />
+          <div>
+            <label className="block text-xs font-mono font-bold text-slate-700 mb-1">
+              Email Address <span className="text-indigo-600">*</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              placeholder="alex@enterprise.co.ke"
+            />
           </div>
-          <div className="field">
-            <label>Email <span style={{ color: "var(--signal)" }}>*</span></label>
-            <input className="admin-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+
+          <div>
+            <label className="block text-xs font-mono font-bold text-slate-700 mb-1">
+              Company Name
+            </label>
+            <input
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              placeholder="Enterprise Solutions Ltd"
+            />
           </div>
-          <div className="field">
-            <label>Company</label>
-            <input className="admin-input" value={company} onChange={(e) => setCompany(e.target.value)} />
+
+          <div>
+            <label className="block text-xs font-mono font-bold text-slate-700 mb-1">
+              Password <span className="text-indigo-600">*</span>
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              placeholder="••••••••"
+            />
           </div>
-          <div className="field">
-            <label>Password <span style={{ color: "var(--signal)" }}>*</span></label>
-            <input className="admin-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-          </div>
-          <button type="submit" className="btn btn-signal" disabled={loading || !signUpLoaded} style={{ width: "100%" }}>
-            {loading ? "Creating account…" : "Create Account"}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-mono font-bold transition-all shadow-sm"
+          >
+            {loading ? "Creating account…" : "Create Client Account"}
           </button>
         </form>
 
-        <p style={{ marginTop: 20, fontSize: "0.88rem", color: "var(--ink-3)", textAlign: "center" }}>
-          Already have an account? <Link href="/client/login" style={{ color: "var(--signal)" }}>Log in</Link>
+        <p className="text-xs font-mono text-center text-slate-500">
+          Already have an account?{" "}
+          <Link href="/client/login" className="text-indigo-600 hover:underline font-bold">
+            Log in
+          </Link>
         </p>
       </div>
     </div>
-  )
-}
-
-export default function ClientSignupPage() {
-  return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder"}>
-      <ClientSignupContent />
-    </ClerkProvider>
   )
 }
